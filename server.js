@@ -1,3 +1,6 @@
+// Forzar IPv4 – Render free tier no soporta IPv6
+require('dns').setDefaultResultOrder('ipv4first');
+
 const express = require('express');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
