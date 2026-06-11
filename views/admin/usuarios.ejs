@@ -1,0 +1,83 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <a href="/admin" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i> Volver
+  </a>
+  <h2 class="fw-bold mb-0">Gestión de Usuarios</h2>
+</div>
+
+<div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index:9999"></div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-secondary">
+          <tr>
+            <th class="ps-3">#</th>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th class="text-center">Puntos</th>
+            <th class="text-center">Rol</th>
+            <th class="text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% usuarios.forEach(u => { %>
+          <tr>
+            <td class="ps-3 text-muted small"><%= u.id %></td>
+            <td><span class="fw-semibold"><%= u.username %></span></td>
+            <td class="text-muted small"><%= u.email %></td>
+            <td class="text-center fw-bold"><%= u.puntos_total %></td>
+            <td class="text-center">
+              <span class="badge <%= u.es_admin ? 'bg-warning text-dark' : 'bg-secondary' %>">
+                <%= u.es_admin ? 'Admin' : 'Usuario' %>
+              </span>
+            </td>
+            <td class="text-center">
+              <% if (u.id !== usuario.id) { %>
+              <button class="btn btn-sm <%= u.es_admin ? 'btn-outline-danger' : 'btn-outline-success' %> btn-toggle-admin"
+                data-id="<%= u.id %>" data-admin="<%= u.es_admin %>">
+                <%= u.es_admin ? 'Quitar admin' : 'Hacer admin' %>
+              </button>
+              <% } else { %>
+              <span class="badge bg-primary">Tú</span>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function showToast(msg, ok) {
+  const id = 'toast' + Date.now();
+  const html = `<div id="${id}" class="toast align-items-center text-white border-0 ${ok ? 'bg-success' : 'bg-danger'}" role="alert">
+    <div class="d-flex"><div class="toast-body fw-semibold">${msg}</div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+  document.getElementById('toast-container').insertAdjacentHTML('beforeend', html);
+  const el = document.getElementById(id);
+  new bootstrap.Toast(el, { delay: 3000 }).show();
+  el.addEventListener('hidden.bs.toast', () => el.remove());
+}
+
+document.querySelectorAll('.btn-toggle-admin').forEach(btn => {
+  btn.addEventListener('click', async function () {
+    const id = this.dataset.id;
+    const res = await fetch('/admin/toggle-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario_id: id })
+    });
+    const data = await res.json();
+    showToast(data.msg, data.ok);
+    if (data.ok) setTimeout(() => location.reload(), 1000);
+  });
+});
+</script>
+
+<%- include('../partials/footer') %>

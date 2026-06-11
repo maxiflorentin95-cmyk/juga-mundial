@@ -1,0 +1,219 @@
+<%- include('partials/header') %>
+
+<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+  <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i> Volver
+  </a>
+  <h2 class="fw-bold mb-0">Mis Pronósticos</h2>
+</div>
+
+<!-- Estadísticas -->
+<% if (stats && stats.total > 0) { %>
+<div class="row g-2 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card border-0 bg-primary bg-opacity-10 border-primary text-center py-2">
+      <div class="fw-bold fs-4 text-primary"><%= stats.puntos || 0 %></div>
+      <div class="small text-muted">Puntos</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 bg-warning bg-opacity-10 border-warning text-center py-2">
+      <div class="fw-bold fs-4 text-warning"><%= stats.exactos || 0 %></div>
+      <div class="small text-muted">Exactos 🎯</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 bg-success bg-opacity-10 border-success text-center py-2">
+      <div class="fw-bold fs-4 text-success"><%= stats.resultado || 0 %></div>
+      <div class="small text-muted">Resultado ✓</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 bg-secondary bg-opacity-10 text-center py-2">
+      <div class="fw-bold fs-4"><%= stats.total %></div>
+      <div class="small text-muted">Pronósticos</div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<!-- Sistema de puntos -->
+<div class="alert alert-info py-2 small mb-4">
+  <i class="bi bi-info-circle-fill me-1"></i>
+  <strong>Puntos:</strong> Resultado exacto = <span class="badge bg-warning text-dark">3 pts</span> &nbsp;
+  Resultado correcto = <span class="badge bg-primary">1 pt</span> &nbsp;
+  Fallado = <span class="badge bg-secondary">0 pts</span>
+  &nbsp;· Los pronósticos cierran <strong>60 minutos</strong> antes de cada partido.
+</div>
+
+<!-- Tabs por grupo -->
+<ul class="nav nav-tabs flex-nowrap overflow-auto mb-3" id="grupoTabs" role="tablist" style="scrollbar-width:thin">
+  <% grupos.forEach((g, i) => { %>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link <%= i===0 ? 'active' : '' %> text-nowrap" data-bs-toggle="tab" data-bs-target="#grupo-<%= g %>">
+      Grupo <%= g %>
+    </button>
+  </li>
+  <% }) %>
+</ul>
+
+<div class="tab-content" id="grupoTabsContent">
+  <% grupos.forEach((g, i) => { %>
+  <div class="tab-pane fade <%= i===0 ? 'show active' : '' %>" id="grupo-<%= g %>">
+    <div class="row g-3">
+      <% partidosPorGrupo[g].forEach(p => { %>
+      <div class="col-12 col-md-6 col-xl-4">
+        <div class="card border-0 shadow-sm h-100 partido-card" data-id="<%= p.id %>">
+          <!-- Header del partido -->
+          <div class="card-header py-2 <%= p.cerrado ? 'bg-secondary text-white' : 'bg-primary text-white' %>">
+            <div class="d-flex justify-content-between align-items-center">
+              <small>
+                <i class="bi bi-calendar3 me-1"></i>
+                <%= new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}) %>
+                · <%= p.hora %>
+              </small>
+              <span class="badge <%= p.estado === 'finalizado' ? 'bg-success' : p.cerrado ? 'bg-danger' : 'bg-light text-dark' %>">
+                <%= p.estado === 'finalizado' ? 'Finalizado' : p.cerrado ? 'Cerrado' : 'Abierto' %>
+              </span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Equipos -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="text-center flex-grow-1">
+                <div class="fs-2"><%= p.local_bandera %></div>
+                <div class="fw-bold small"><%= p.local_nombre %></div>
+              </div>
+              <div class="text-center px-2">
+                <% if (p.estado === 'finalizado') { %>
+                  <span class="badge bg-dark fs-5 px-3 py-2">
+                    <%= p.goles_local %> – <%= p.goles_visitante %>
+                  </span>
+                  <div class="text-muted small mt-1">Resultado final</div>
+                <% } else { %>
+                  <span class="text-muted fw-bold">VS</span>
+                <% } %>
+              </div>
+              <div class="text-center flex-grow-1">
+                <div class="fs-2"><%= p.visit_bandera %></div>
+                <div class="fw-bold small"><%= p.visit_nombre %></div>
+              </div>
+            </div>
+
+            <!-- Pronóstico -->
+            <div class="pronóstico-section">
+              <% if (p.estado === 'finalizado' && p.pronostico) { %>
+                <!-- Cerrado con pronóstico -->
+                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                  <div class="text-center">
+                    <div class="text-muted small">Tu pronóstico</div>
+                    <div class="badge bg-dark fs-6 px-3 py-1">
+                      <%= p.pronostico.goles_local %> – <%= p.pronostico.goles_visitante %>
+                    </div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-muted small">Puntos</div>
+                    <span class="badge fs-6 px-3 py-1
+                      <%= p.pronostico.puntos_obtenidos === 3 ? 'bg-warning text-dark' :
+                          p.pronostico.puntos_obtenidos === 1 ? 'bg-primary' : 'bg-secondary' %>">
+                      +<%= p.pronostico.puntos_obtenidos %>
+                    </span>
+                  </div>
+                </div>
+              <% } else if (p.estado === 'finalizado' && !p.pronostico) { %>
+                <div class="text-center text-muted small">No pronosticaste este partido</div>
+              <% } else if (p.cerrado && p.pronostico) { %>
+                <!-- Cerrado, tiene pronóstico -->
+                <div class="text-center">
+                  <div class="text-muted small mb-1">Tu pronóstico (cerrado)</div>
+                  <span class="badge bg-dark fs-6 px-3 py-1">
+                    <%= p.pronostico.goles_local %> – <%= p.pronostico.goles_visitante %>
+                  </span>
+                </div>
+              <% } else if (p.cerrado && !p.pronostico) { %>
+                <div class="text-center text-muted small">Cerrado sin pronóstico</div>
+              <% } else { %>
+                <!-- Abierto para pronosticar -->
+                <div class="input-pron">
+                  <label class="form-label small fw-bold text-center d-block mb-2">
+                    <%= p.pronostico ? 'Modificar pronóstico' : 'Tu pronóstico' %>
+                  </label>
+                  <div class="d-flex align-items-center justify-content-center gap-2">
+                    <input type="number" class="form-control form-control-sm text-center fw-bold pron-local"
+                      min="0" max="20" style="width:60px"
+                      value="<%= p.pronostico ? p.pronostico.goles_local : '' %>"
+                      placeholder="0">
+                    <span class="fw-bold text-muted">–</span>
+                    <input type="number" class="form-control form-control-sm text-center fw-bold pron-visit"
+                      min="0" max="20" style="width:60px"
+                      value="<%= p.pronostico ? p.pronostico.goles_visitante : '' %>"
+                      placeholder="0">
+                  </div>
+                  <button class="btn btn-primary btn-sm w-100 mt-2 btn-guardar"
+                    data-id="<%= p.id %>">
+                    <i class="bi bi-save me-1"></i>
+                    <%= p.pronostico ? 'Actualizar' : 'Guardar' %>
+                  </button>
+                  <div class="msg-pron small text-center mt-1"></div>
+                </div>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="card-footer bg-transparent text-muted small py-1">
+            <i class="bi bi-geo-alt"></i> <%= p.estadio %>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+  <% }) %>
+</div>
+
+<script>
+document.querySelectorAll('.btn-guardar').forEach(btn => {
+  btn.addEventListener('click', async function () {
+    const card = this.closest('.partido-card');
+    const id = this.dataset.id;
+    const gl = card.querySelector('.pron-local').value;
+    const gv = card.querySelector('.pron-visit').value;
+    const msg = card.querySelector('.msg-pron');
+
+    if (gl === '' || gv === '') {
+      msg.textContent = 'Ingresá ambos goles';
+      msg.className = 'msg-pron small text-center mt-1 text-danger';
+      return;
+    }
+
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    try {
+      const res = await fetch('/pronosticos/guardar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partido_id: id, goles_local: gl, goles_visitante: gv })
+      });
+      const data = await res.json();
+      msg.textContent = data.msg;
+      msg.className = 'msg-pron small text-center mt-1 ' + (data.ok ? 'text-success' : 'text-danger');
+      if (data.ok) {
+        this.innerHTML = '<i class="bi bi-check2 me-1"></i>Guardado';
+        this.classList.replace('btn-primary', 'btn-success');
+      } else {
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-save me-1"></i>Guardar';
+      }
+    } catch (e) {
+      msg.textContent = 'Error de red';
+      msg.className = 'msg-pron small text-center mt-1 text-danger';
+      this.disabled = false;
+      this.innerHTML = '<i class="bi bi-save me-1"></i>Guardar';
+    }
+  });
+});
+</script>
+
+<%- include('partials/footer') %>

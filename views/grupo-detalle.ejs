@@ -1,0 +1,111 @@
+<%- include('partials/header') %>
+
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+  <a href="/grupos" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i> Volver
+  </a>
+  <h2 class="fw-bold mb-0">Grupo <%= grupo %></h2>
+</div>
+
+<div class="row g-4">
+  <!-- Tabla de posiciones -->
+  <div class="col-12 col-md-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-dark text-white fw-bold">
+        <i class="bi bi-list-ol me-2"></i>Tabla de Posiciones
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+          <thead class="table-secondary">
+            <tr>
+              <th class="ps-3">#</th>
+              <th>Equipo</th>
+              <th class="text-center">PJ</th>
+              <th class="text-center">PG</th>
+              <th class="text-center">PE</th>
+              <th class="text-center">PP</th>
+              <th class="text-center">GF</th>
+              <th class="text-center">GC</th>
+              <th class="text-center">GD</th>
+              <th class="text-center fw-bold">PTS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% tabla.forEach((row, idx) => { %>
+            <tr class="<%= idx < 2 ? 'table-success' : '' %>">
+              <td class="ps-3 fw-bold"><%= idx+1 %></td>
+              <td>
+                <span class="me-1"><%= row.equipo.bandera %></span>
+                <span class="fw-semibold"><%= row.equipo.nombre %></span>
+              </td>
+              <td class="text-center"><%= row.pj %></td>
+              <td class="text-center"><%= row.pg %></td>
+              <td class="text-center"><%= row.pe %></td>
+              <td class="text-center"><%= row.pp %></td>
+              <td class="text-center"><%= row.gf %></td>
+              <td class="text-center"><%= row.gc %></td>
+              <td class="text-center <%= row.gd > 0 ? 'text-success' : row.gd < 0 ? 'text-danger' : '' %>">
+                <%= row.gd > 0 ? '+' : '' %><%= row.gd %>
+              </td>
+              <td class="text-center fw-bold fs-6"><%= row.pts %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer text-muted small">
+        <i class="bi bi-info-circle"></i> Verde = clasifican a Octavos
+      </div>
+    </div>
+  </div>
+
+  <!-- Partidos -->
+  <div class="col-12 col-md-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-primary text-white fw-bold">
+        <i class="bi bi-calendar3 me-2"></i>Partidos
+      </div>
+      <div class="card-body p-0">
+        <%
+          // Agrupar por fecha
+          const porFecha = {};
+          partidos.forEach(p => {
+            if (!porFecha[p.fecha]) porFecha[p.fecha] = [];
+            porFecha[p.fecha].push(p);
+          });
+        %>
+        <% Object.entries(porFecha).forEach(([fecha, ps]) => { %>
+        <div class="px-3 py-2 bg-light border-bottom">
+          <small class="fw-bold text-muted">
+            <%= new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase() %>
+          </small>
+        </div>
+        <% ps.forEach(p => { %>
+        <div class="px-3 py-3 border-bottom">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="text-end flex-grow-1" style="min-width:90px">
+              <span class="fw-bold"><%= p.local_bandera %> <%= p.local_nombre %></span>
+            </div>
+            <div class="text-center px-2">
+              <% if (p.estado === 'finalizado') { %>
+                <span class="badge bg-dark fs-6 px-3 py-2"><%= p.goles_local %> – <%= p.goles_visitante %></span>
+              <% } else { %>
+                <span class="badge bg-secondary px-3 py-2"><%= p.hora %></span>
+              <% } %>
+            </div>
+            <div class="flex-grow-1" style="min-width:90px">
+              <span class="fw-bold"><%= p.visit_nombre %> <%= p.visit_bandera %></span>
+            </div>
+          </div>
+          <div class="text-center text-muted small mt-1">
+            <i class="bi bi-geo-alt"></i> <%= p.estadio %>, <%= p.ciudad %>
+          </div>
+        </div>
+        <% }) %>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,106 @@
+/* ─── JUGA Mundial 2026 – Estilos ─────────────────────────────── */
+
+:root {
+  --juga-blue:   #0d6efd;
+  --juga-green:  #198754;
+  --juga-red:    #dc3545;
+  --juga-dark:   #212529;
+  --juga-yellow: #ffc107;
+}
+
+/* ─── Login ─────────────────────────────────────────────────── */
+.login-card {
+  margin: 1rem auto;
+  border-radius: 1rem;
+}
+
+/* ─── Navbar ─────────────────────────────────────────────────── */
+.navbar-brand {
+  letter-spacing: -.5px;
+}
+
+/* ─── Partido rows ───────────────────────────────────────────── */
+.partido-row:last-child {
+  border-bottom: none !important;
+}
+
+.score-box {
+  font-size: 1.1rem;
+  min-width: 70px;
+  text-align: center;
+}
+
+/* ─── Cards ──────────────────────────────────────────────────── */
+.partido-card {
+  transition: transform .15s, box-shadow .15s;
+}
+.partido-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.12) !important;
+}
+
+/* ─── Pronóstico inputs ──────────────────────────────────────── */
+.pron-local,
+.pron-visit,
+.res-local,
+.res-visit {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* ─── Tabs grupo ─────────────────────────────────────────────── */
+#grupoTabs {
+  border-bottom: 2px solid var(--juga-blue);
+}
+#grupoTabs .nav-link {
+  font-size: .85rem;
+  padding: .4rem .75rem;
+  color: #555;
+}
+#grupoTabs .nav-link.active {
+  background: var(--juga-blue);
+  color: #fff;
+  border-color: var(--juga-blue);
+}
+
+/* ─── Tabla de posiciones ────────────────────────────────────── */
+.table-success td {
+  background-color: rgba(25, 135, 84, .08) !important;
+}
+
+/* ─── Ad slots ───────────────────────────────────────────────── */
+.ad-placeholder {
+  background: repeating-linear-gradient(
+    45deg,
+    #f0f0f0 0, #f0f0f0 10px,
+    #e8e8e8 10px, #e8e8e8 20px
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: .5rem;
+  border: 1px dashed #ccc;
+}
+
+/* ─── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 576px) {
+  .ad-slot { display: none !important; }
+  .ad-slot.d-flex.d-md-none { display: flex !important; }
+
+  .partido-card .card-body {
+    padding: .75rem;
+  }
+
+  h2.fw-bold {
+    font-size: 1.25rem;
+  }
+}
+
+/* ─── Footer ─────────────────────────────────────────────────── */
+footer {
+  font-size: .8rem;
+  border-top: 2px solid var(--juga-blue) !important;
+}
+
+/* ─── Podio ──────────────────────────────────────────────────── */
+.podio-1 { transform: translateY(-10px); }

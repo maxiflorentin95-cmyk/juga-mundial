@@ -1,0 +1,19 @@
+{
+  "name": "juga-mundial-2026",
+  "version": "1.0.0",
+  "description": "Plataforma de pronósticos deportivos Mundial 2026",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "latest",
+    "connect-sqlite3": "^0.9.13",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3"
+  }
+}
