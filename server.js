@@ -32,6 +32,16 @@ app.use('/pronosticos', require('./routes/pronosticos'));
 app.use('/ranking', require('./routes/ranking'));
 app.use('/admin', require('./routes/admin'));
 
+// Health check – muestra estado de DB
+app.get('/health', async (req, res) => {
+  try {
+    const r = await pool.query('SELECT COUNT(*) AS c FROM usuarios');
+    res.json({ ok: true, usuarios: r.rows[0].c, db: 'connected' });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
 async function start() {
   try {
     console.log('🔌 Conectando a base de datos...');

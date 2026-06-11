@@ -20,7 +20,8 @@ router.post('/login', async (req, res) => {
     };
     res.redirect('/dashboard');
   } catch (e) {
-    res.render('login', { title: 'Iniciar Sesión', error: 'Error del servidor' });
+    console.error('LOGIN ERROR:', e.message);
+    res.render('login', { title: 'Iniciar Sesión', error: 'Error del servidor: ' + e.message });
   }
 });
 
@@ -48,7 +49,8 @@ router.post('/register', async (req, res) => {
     req.session.usuario = { id: result.lastInsertRowid, username, email, es_admin: 0, puntos_total: 0 };
     res.redirect('/dashboard');
   } catch (e) {
-    res.render('register', { title: 'Registrarse', error: 'Error del servidor' });
+    console.error('REGISTER ERROR:', e.message);
+    res.render('register', { title: 'Registrarse', error: 'Error: ' + e.message });
   }
 });
 
