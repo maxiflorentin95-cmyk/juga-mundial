@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: juga-mundial
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node start.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true

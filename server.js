@@ -1,7 +1,8 @@
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+const pgSession = require('connect-pg-simple')(session);
 const path = require('path');
+const { pool } = require('./db');
 
 const app = express();
 
@@ -11,12 +12,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-const dataDir = process.env.DATA_DIR || __dirname;
 app.use(session({
+  store: new pgSession({ pool, createTableIfMissing: true }),
   secret: process.env.SESSION_SECRET || 'juga-mundial-2026-s3cr3t-k3y',
   resave: false,
   saveUninitialized: false,
-  store: new SQLiteStore({ db: 'sessions.db', dir: dataDir }),
   cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 

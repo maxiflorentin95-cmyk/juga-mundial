@@ -1,25 +1,23 @@
 // start.js – entry point para producción
-// Si la DB está vacía (no hay equipos), corre el seed automáticamente
-const fs = require('fs');
-const path = require('path');
+const { initSchema, prepare } = require('./db');
 
-const dataDir = process.env.DATA_DIR || __dirname;
-const dbPath = path.join(dataDir, 'mundial.db');
+async function main() {
+  console.log('🔌 Conectando a PostgreSQL...');
+  await initSchema();
+  console.log('✅ Schema listo');
 
-// Asegurar que el directorio de datos existe
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+  // Si no hay equipos, hacer el seed automáticamente
+  const row = await prepare('SELECT COUNT(*) AS c FROM equipos').get();
+  const count = parseInt(row?.c ?? row?.count ?? 0);
+  if (count === 0) {
+    console.log('🌱 Base de datos vacía, ejecutando seed...');
+    await require('./seed').run();
+  }
+
+  require('./server');
 }
 
-// Cargar la DB (esto crea las tablas si no existen)
-const db = require('./db');
-
-// Si no hay equipos, hacer el seed automáticamente
-const count = db.prepare('SELECT COUNT(*) as c FROM equipos').get();
-if (!count || count.c === 0) {
-  console.log('🌱 Base de datos vacía, ejecutando seed...');
-  require('./seed');
-}
-
-// Arrancar el servidor
-require('./server');
+main().catch(err => {
+  console.error('Error iniciando servidor:', err);
+  process.exit(1);
+});
