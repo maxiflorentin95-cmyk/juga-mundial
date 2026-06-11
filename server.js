@@ -44,6 +44,9 @@ app.get('/health', async (req, res) => {
 
 async function start() {
   try {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL no está definida. Configurala en las variables de entorno de Render.');
+    }
     console.log('🔌 Conectando a base de datos...');
     await initSchema();
     console.log('✅ Schema OK');
@@ -61,7 +64,7 @@ async function start() {
       console.log(`⚽ JUGA Mundial 2026 en http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error('❌ Error al iniciar:', err.message);
+    console.error('❌ Error al iniciar:', err);
     process.exit(1);
   }
 }
