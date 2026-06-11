@@ -2,7 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const path = require('path');
-const { pool } = require('./db');
+const { pool, initSchema, prepare } = require('./db');
 
 const app = express();
 
@@ -32,7 +32,28 @@ app.use('/pronosticos', require('./routes/pronosticos'));
 app.use('/ranking', require('./routes/ranking'));
 app.use('/admin', require('./routes/admin'));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`⚽ JUGA Mundial 2026 corriendo en http://localhost:${PORT}`);
-});
+async function start() {
+  try {
+    console.log('🔌 Conectando a base de datos...');
+    await initSchema();
+    console.log('✅ Schema OK');
+
+    // Seed automático si la DB está vacía
+    const row = await prepare('SELECT COUNT(*) AS c FROM equipos').get();
+    const count = parseInt(row?.c ?? row?.count ?? 0);
+    if (count === 0) {
+      console.log('🌱 Ejecutando seed...');
+      await require('./seed').run();
+    }
+
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+      console.log(`⚽ JUGA Mundial 2026 en http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error('❌ Error al iniciar:', err.message);
+    process.exit(1);
+  }
+}
+
+start();
