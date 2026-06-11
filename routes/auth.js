@@ -7,6 +7,8 @@ router.get('/', (req, res) => {
   res.render('login', { title: 'Iniciar Sesión', error: null });
 });
 
+router.get('/login', (req, res) => res.redirect('/'));
+
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
