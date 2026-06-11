@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 async function run() {
   console.log('🌱 Sembrando base de datos...');
 
-  // Limpiar tablas en orden correcto
   await exec('DELETE FROM pronosticos');
   await exec('DELETE FROM partidos');
   await exec('DELETE FROM equipos');
@@ -13,213 +12,190 @@ async function run() {
   await exec('ALTER SEQUENCE partidos_id_seq RESTART WITH 1');
   await exec('ALTER SEQUENCE usuarios_id_seq RESTART WITH 1');
 
-  // ─── USUARIOS ──────────────────────────────────────────────────────────────
+  // ─── ADMIN ────────────────────────────────────────────────────────────────
   const hash = bcrypt.hashSync('admin2026', 10);
   await prepare('INSERT INTO usuarios (username, email, password_hash, es_admin) VALUES ($1,$2,$3,1)')
     .run('admin', 'admin@juga.com', hash);
   console.log('✓ Usuario admin creado (admin / admin2026)');
 
-  // ─── EQUIPOS ───────────────────────────────────────────────────────────────
+  // ─── EQUIPOS ──────────────────────────────────────────────────────────────
   const equipos = [
     // Grupo A
-    { nombre: 'Argentina',      corto: 'ARG', grupo: 'A', bandera: '🇦🇷', conf: 'CONMEBOL' },
-    { nombre: 'Estados Unidos', corto: 'USA', grupo: 'A', bandera: '🇺🇸', conf: 'CONCACAF' },
-    { nombre: 'Marruecos',      corto: 'MAR', grupo: 'A', bandera: '🇲🇦', conf: 'CAF' },
-    { nombre: 'Japón',          corto: 'JPN', grupo: 'A', bandera: '🇯🇵', conf: 'AFC' },
+    { nombre: 'México',             corto: 'MEX', grupo: 'A', bandera: '🇲🇽', conf: 'CONCACAF' },
+    { nombre: 'Corea del Sur',      corto: 'KOR', grupo: 'A', bandera: '🇰🇷', conf: 'AFC' },
+    { nombre: 'Sudáfrica',          corto: 'RSA', grupo: 'A', bandera: '🇿🇦', conf: 'CAF' },
+    { nombre: 'Chequia',            corto: 'CZE', grupo: 'A', bandera: '🇨🇿', conf: 'UEFA' },
     // Grupo B
-    { nombre: 'México',         corto: 'MEX', grupo: 'B', bandera: '🇲🇽', conf: 'CONCACAF' },
-    { nombre: 'Francia',        corto: 'FRA', grupo: 'B', bandera: '🇫🇷', conf: 'UEFA' },
-    { nombre: 'Senegal',        corto: 'SEN', grupo: 'B', bandera: '🇸🇳', conf: 'CAF' },
-    { nombre: 'Corea del Sur',  corto: 'KOR', grupo: 'B', bandera: '🇰🇷', conf: 'AFC' },
+    { nombre: 'Canadá',             corto: 'CAN', grupo: 'B', bandera: '🇨🇦', conf: 'CONCACAF' },
+    { nombre: 'Suiza',              corto: 'SUI', grupo: 'B', bandera: '🇨🇭', conf: 'UEFA' },
+    { nombre: 'Catar',              corto: 'QAT', grupo: 'B', bandera: '🇶🇦', conf: 'AFC' },
+    { nombre: 'Bosnia-Herzegovina', corto: 'BIH', grupo: 'B', bandera: '🇧🇦', conf: 'UEFA' },
     // Grupo C
-    { nombre: 'Canadá',         corto: 'CAN', grupo: 'C', bandera: '🇨🇦', conf: 'CONCACAF' },
-    { nombre: 'Inglaterra',     corto: 'ENG', grupo: 'C', bandera: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', conf: 'UEFA' },
-    { nombre: 'Brasil',         corto: 'BRA', grupo: 'C', bandera: '🇧🇷', conf: 'CONMEBOL' },
-    { nombre: 'Australia',      corto: 'AUS', grupo: 'C', bandera: '🇦🇺', conf: 'AFC' },
+    { nombre: 'Brasil',             corto: 'BRA', grupo: 'C', bandera: '🇧🇷', conf: 'CONMEBOL' },
+    { nombre: 'Marruecos',          corto: 'MAR', grupo: 'C', bandera: '🇲🇦', conf: 'CAF' },
+    { nombre: 'Haití',              corto: 'HAI', grupo: 'C', bandera: '🇭🇹', conf: 'CONCACAF' },
+    { nombre: 'Escocia',            corto: 'SCO', grupo: 'C', bandera: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', conf: 'UEFA' },
     // Grupo D
-    { nombre: 'Alemania',       corto: 'GER', grupo: 'D', bandera: '🇩🇪', conf: 'UEFA' },
-    { nombre: 'Colombia',       corto: 'COL', grupo: 'D', bandera: '🇨🇴', conf: 'CONMEBOL' },
-    { nombre: 'Egipto',         corto: 'EGY', grupo: 'D', bandera: '🇪🇬', conf: 'CAF' },
-    { nombre: 'Arabia Saudita', corto: 'KSA', grupo: 'D', bandera: '🇸🇦', conf: 'AFC' },
+    { nombre: 'Estados Unidos',     corto: 'USA', grupo: 'D', bandera: '🇺🇸', conf: 'CONCACAF' },
+    { nombre: 'Paraguay',           corto: 'PAR', grupo: 'D', bandera: '🇵🇾', conf: 'CONMEBOL' },
+    { nombre: 'Australia',          corto: 'AUS', grupo: 'D', bandera: '🇦🇺', conf: 'AFC' },
+    { nombre: 'Turquía',            corto: 'TUR', grupo: 'D', bandera: '🇹🇷', conf: 'UEFA' },
     // Grupo E
-    { nombre: 'España',         corto: 'ESP', grupo: 'E', bandera: '🇪🇸', conf: 'UEFA' },
-    { nombre: 'Uruguay',        corto: 'URU', grupo: 'E', bandera: '🇺🇾', conf: 'CONMEBOL' },
-    { nombre: 'Irán',           corto: 'IRN', grupo: 'E', bandera: '🇮🇷', conf: 'AFC' },
-    { nombre: 'Nigeria',        corto: 'NGA', grupo: 'E', bandera: '🇳🇬', conf: 'CAF' },
+    { nombre: 'Alemania',           corto: 'GER', grupo: 'E', bandera: '🇩🇪', conf: 'UEFA' },
+    { nombre: 'Curazao',            corto: 'CUW', grupo: 'E', bandera: '🇨🇼', conf: 'CONCACAF' },
+    { nombre: 'Costa de Marfil',    corto: 'CIV', grupo: 'E', bandera: '🇨🇮', conf: 'CAF' },
+    { nombre: 'Ecuador',            corto: 'ECU', grupo: 'E', bandera: '🇪🇨', conf: 'CONMEBOL' },
     // Grupo F
-    { nombre: 'Portugal',       corto: 'POR', grupo: 'F', bandera: '🇵🇹', conf: 'UEFA' },
-    { nombre: 'Países Bajos',   corto: 'NED', grupo: 'F', bandera: '🇳🇱', conf: 'UEFA' },
-    { nombre: 'Serbia',         corto: 'SRB', grupo: 'F', bandera: '🇷🇸', conf: 'UEFA' },
-    { nombre: 'Camerún',        corto: 'CMR', grupo: 'F', bandera: '🇨🇲', conf: 'CAF' },
+    { nombre: 'Países Bajos',       corto: 'NED', grupo: 'F', bandera: '🇳🇱', conf: 'UEFA' },
+    { nombre: 'Japón',              corto: 'JPN', grupo: 'F', bandera: '🇯🇵', conf: 'AFC' },
+    { nombre: 'Suecia',             corto: 'SWE', grupo: 'F', bandera: '🇸🇪', conf: 'UEFA' },
+    { nombre: 'Túnez',              corto: 'TUN', grupo: 'F', bandera: '🇹🇳', conf: 'CAF' },
     // Grupo G
-    { nombre: 'Italia',         corto: 'ITA', grupo: 'G', bandera: '🇮🇹', conf: 'UEFA' },
-    { nombre: 'Bélgica',        corto: 'BEL', grupo: 'G', bandera: '🇧🇪', conf: 'UEFA' },
-    { nombre: 'Túnez',          corto: 'TUN', grupo: 'G', bandera: '🇹🇳', conf: 'CAF' },
-    { nombre: 'Honduras',       corto: 'HON', grupo: 'G', bandera: '🇭🇳', conf: 'CONCACAF' },
+    { nombre: 'Bélgica',            corto: 'BEL', grupo: 'G', bandera: '🇧🇪', conf: 'UEFA' },
+    { nombre: 'Egipto',             corto: 'EGY', grupo: 'G', bandera: '🇪🇬', conf: 'CAF' },
+    { nombre: 'Irán',               corto: 'IRN', grupo: 'G', bandera: '🇮🇷', conf: 'AFC' },
+    { nombre: 'Nueva Zelanda',      corto: 'NZL', grupo: 'G', bandera: '🇳🇿', conf: 'OFC' },
     // Grupo H
-    { nombre: 'Croacia',        corto: 'CRO', grupo: 'H', bandera: '🇭🇷', conf: 'UEFA' },
-    { nombre: 'Dinamarca',      corto: 'DEN', grupo: 'H', bandera: '🇩🇰', conf: 'UEFA' },
-    { nombre: 'Ecuador',        corto: 'ECU', grupo: 'H', bandera: '🇪🇨', conf: 'CONMEBOL' },
-    { nombre: 'Jordania',       corto: 'JOR', grupo: 'H', bandera: '🇯🇴', conf: 'AFC' },
+    { nombre: 'España',             corto: 'ESP', grupo: 'H', bandera: '🇪🇸', conf: 'UEFA' },
+    { nombre: 'Cabo Verde',         corto: 'CPV', grupo: 'H', bandera: '🇨🇻', conf: 'CAF' },
+    { nombre: 'Arabia Saudita',     corto: 'KSA', grupo: 'H', bandera: '🇸🇦', conf: 'AFC' },
+    { nombre: 'Uruguay',            corto: 'URU', grupo: 'H', bandera: '🇺🇾', conf: 'CONMEBOL' },
     // Grupo I
-    { nombre: 'Austria',        corto: 'AUT', grupo: 'I', bandera: '🇦🇹', conf: 'UEFA' },
-    { nombre: 'Venezuela',      corto: 'VEN', grupo: 'I', bandera: '🇻🇪', conf: 'CONMEBOL' },
-    { nombre: 'Sudáfrica',      corto: 'RSA', grupo: 'I', bandera: '🇿🇦', conf: 'CAF' },
-    { nombre: 'Nueva Zelanda',  corto: 'NZL', grupo: 'I', bandera: '🇳🇿', conf: 'OFC' },
+    { nombre: 'Francia',            corto: 'FRA', grupo: 'I', bandera: '🇫🇷', conf: 'UEFA' },
+    { nombre: 'Senegal',            corto: 'SEN', grupo: 'I', bandera: '🇸🇳', conf: 'CAF' },
+    { nombre: 'Irak',               corto: 'IRQ', grupo: 'I', bandera: '🇮🇶', conf: 'AFC' },
+    { nombre: 'Noruega',            corto: 'NOR', grupo: 'I', bandera: '🇳🇴', conf: 'UEFA' },
     // Grupo J
-    { nombre: 'Turquía',        corto: 'TUR', grupo: 'J', bandera: '🇹🇷', conf: 'UEFA' },
-    { nombre: 'Costa Rica',     corto: 'CRC', grupo: 'J', bandera: '🇨🇷', conf: 'CONCACAF' },
-    { nombre: 'Argelia',        corto: 'ALG', grupo: 'J', bandera: '🇩🇿', conf: 'CAF' },
-    { nombre: 'Uzbekistán',     corto: 'UZB', grupo: 'J', bandera: '🇺🇿', conf: 'AFC' },
+    { nombre: 'Argentina',          corto: 'ARG', grupo: 'J', bandera: '🇦🇷', conf: 'CONMEBOL' },
+    { nombre: 'Argelia',            corto: 'ALG', grupo: 'J', bandera: '🇩🇿', conf: 'CAF' },
+    { nombre: 'Austria',            corto: 'AUT', grupo: 'J', bandera: '🇦🇹', conf: 'UEFA' },
+    { nombre: 'Jordania',           corto: 'JOR', grupo: 'J', bandera: '🇯🇴', conf: 'AFC' },
     // Grupo K
-    { nombre: 'Escocia',        corto: 'SCO', grupo: 'K', bandera: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', conf: 'UEFA' },
-    { nombre: 'Rumanía',        corto: 'ROU', grupo: 'K', bandera: '🇷🇴', conf: 'UEFA' },
-    { nombre: 'Panamá',         corto: 'PAN', grupo: 'K', bandera: '🇵🇦', conf: 'CONCACAF' },
-    { nombre: 'Rep. Dem. Congo',corto: 'COD', grupo: 'K', bandera: '🇨🇩', conf: 'CAF' },
+    { nombre: 'Portugal',           corto: 'POR', grupo: 'K', bandera: '🇵🇹', conf: 'UEFA' },
+    { nombre: 'Rep. Dem. Congo',    corto: 'COD', grupo: 'K', bandera: '🇨🇩', conf: 'CAF' },
+    { nombre: 'Uzbekistán',         corto: 'UZB', grupo: 'K', bandera: '🇺🇿', conf: 'AFC' },
+    { nombre: 'Colombia',           corto: 'COL', grupo: 'K', bandera: '🇨🇴', conf: 'CONMEBOL' },
     // Grupo L
-    { nombre: 'Rep. Checa',     corto: 'CZE', grupo: 'L', bandera: '🇨🇿', conf: 'UEFA' },
-    { nombre: 'Paraguay',       corto: 'PAR', grupo: 'L', bandera: '🇵🇾', conf: 'CONMEBOL' },
-    { nombre: 'Jamaica',        corto: 'JAM', grupo: 'L', bandera: '🇯🇲', conf: 'CONCACAF' },
-    { nombre: 'Irak',           corto: 'IRQ', grupo: 'L', bandera: '🇮🇶', conf: 'AFC' },
+    { nombre: 'Inglaterra',         corto: 'ENG', grupo: 'L', bandera: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', conf: 'UEFA' },
+    { nombre: 'Croacia',            corto: 'CRO', grupo: 'L', bandera: '🇭🇷', conf: 'UEFA' },
+    { nombre: 'Ghana',              corto: 'GHA', grupo: 'L', bandera: '🇬🇭', conf: 'CAF' },
+    { nombre: 'Panamá',             corto: 'PAN', grupo: 'L', bandera: '🇵🇦', conf: 'CONCACAF' },
   ];
 
   for (const e of equipos) {
     await prepare('INSERT INTO equipos (nombre, nombre_corto, grupo, bandera, confederacion) VALUES ($1,$2,$3,$4,$5)')
       .run(e.nombre, e.corto, e.grupo, e.bandera, e.conf);
   }
-  console.log(`✓ ${equipos.length} equipos insertados`);
+  console.log('✓ 48 equipos insertados');
 
-  // ─── Helper ────────────────────────────────────────────────────────────────
-  const eid = async (nombre) => {
-    const r = await prepare('SELECT id FROM equipos WHERE nombre=$1').get(nombre);
-    return r.id;
-  };
+  // Mapa nombre → id
+  const rows = await prepare('SELECT id, nombre FROM equipos').all();
+  const tid = {};
+  for (const r of rows) tid[r.nombre] = r.id;
 
-  // ─── ESTADIOS ──────────────────────────────────────────────────────────────
-  const estadios = [
-    { s: 'Estadio Azteca',          c: 'Ciudad de México' },
-    { s: 'Estadio BBVA',            c: 'Monterrey' },
-    { s: 'Estadio Akron',           c: 'Guadalajara' },
-    { s: 'MetLife Stadium',         c: 'Nueva York/NJ' },
-    { s: 'AT&T Stadium',            c: 'Dallas' },
-    { s: 'SoFi Stadium',            c: 'Los Ángeles' },
-    { s: "Levi's Stadium",          c: 'San Francisco' },
-    { s: 'Allegiant Stadium',       c: 'Las Vegas' },
-    { s: 'Hard Rock Stadium',       c: 'Miami' },
-    { s: 'Lumen Field',             c: 'Seattle' },
-    { s: 'Arrowhead Stadium',       c: 'Kansas City' },
-    { s: 'Gillette Stadium',        c: 'Boston' },
-    { s: 'Lincoln Financial Field', c: 'Filadelfia' },
-    { s: 'BC Place',                c: 'Vancouver' },
-    { s: 'BMO Field',               c: 'Toronto' },
+  // Horarios en ET (hora del este de EE.UU.) – referencia para pronósticos
+  const partidos = [
+    // ════════════════════════════════ GRUPO A ════════════════════════════════
+    { fecha: '2026-06-11', hora: '14:00', local: 'México',         visit: 'Sudáfrica',          estadio: 'Estadio Azteca',          ciudad: 'Ciudad de México', grupo: 'A' },
+    { fecha: '2026-06-11', hora: '21:00', local: 'Corea del Sur',  visit: 'Chequia',             estadio: 'Estadio Akron',           ciudad: 'Guadalajara',      grupo: 'A' },
+    { fecha: '2026-06-18', hora: '12:00', local: 'Chequia',        visit: 'Sudáfrica',           estadio: 'Mercedes-Benz Stadium',   ciudad: 'Atlanta',          grupo: 'A' },
+    { fecha: '2026-06-18', hora: '20:00', local: 'México',         visit: 'Corea del Sur',       estadio: 'Estadio Akron',           ciudad: 'Guadalajara',      grupo: 'A' },
+    { fecha: '2026-06-24', hora: '20:00', local: 'Chequia',        visit: 'México',              estadio: 'Estadio Azteca',          ciudad: 'Ciudad de México', grupo: 'A' },
+    { fecha: '2026-06-24', hora: '20:00', local: 'Sudáfrica',      visit: 'Corea del Sur',       estadio: 'Estadio BBVA',            ciudad: 'Monterrey',        grupo: 'A' },
+    // ════════════════════════════════ GRUPO B ════════════════════════════════
+    { fecha: '2026-06-12', hora: '15:00', local: 'Canadá',         visit: 'Bosnia-Herzegovina',  estadio: 'BMO Field',               ciudad: 'Toronto',          grupo: 'B' },
+    { fecha: '2026-06-13', hora: '18:00', local: 'Suiza',          visit: 'Catar',               estadio: 'Arrowhead Stadium',       ciudad: 'Kansas City',      grupo: 'B' },
+    { fecha: '2026-06-18', hora: '15:00', local: 'Suiza',          visit: 'Bosnia-Herzegovina',  estadio: 'SoFi Stadium',            ciudad: 'Los Ángeles',      grupo: 'B' },
+    { fecha: '2026-06-18', hora: '18:00', local: 'Canadá',         visit: 'Catar',               estadio: 'BC Place',                ciudad: 'Vancouver',        grupo: 'B' },
+    { fecha: '2026-06-24', hora: '15:00', local: 'Suiza',          visit: 'Canadá',              estadio: 'BC Place',                ciudad: 'Vancouver',        grupo: 'B' },
+    { fecha: '2026-06-24', hora: '15:00', local: 'Bosnia-Herzegovina', visit: 'Catar',           estadio: 'Lumen Field',             ciudad: 'Seattle',          grupo: 'B' },
+    // ════════════════════════════════ GRUPO C ════════════════════════════════
+    { fecha: '2026-06-13', hora: '18:00', local: 'Brasil',         visit: 'Marruecos',           estadio: 'MetLife Stadium',         ciudad: 'Nueva Jersey',     grupo: 'C' },
+    { fecha: '2026-06-13', hora: '21:00', local: 'Haití',          visit: 'Escocia',             estadio: 'Gillette Stadium',        ciudad: 'Boston',           grupo: 'C' },
+    { fecha: '2026-06-19', hora: '18:00', local: 'Escocia',        visit: 'Marruecos',           estadio: 'Gillette Stadium',        ciudad: 'Boston',           grupo: 'C' },
+    { fecha: '2026-06-19', hora: '20:30', local: 'Brasil',         visit: 'Haití',               estadio: 'Lincoln Financial Field', ciudad: 'Filadelfia',       grupo: 'C' },
+    { fecha: '2026-06-24', hora: '18:00', local: 'Escocia',        visit: 'Brasil',              estadio: 'Hard Rock Stadium',       ciudad: 'Miami',            grupo: 'C' },
+    { fecha: '2026-06-24', hora: '18:00', local: 'Marruecos',      visit: 'Haití',               estadio: 'Mercedes-Benz Stadium',   ciudad: 'Atlanta',          grupo: 'C' },
+    // ════════════════════════════════ GRUPO D ════════════════════════════════
+    { fecha: '2026-06-12', hora: '21:00', local: 'Estados Unidos', visit: 'Paraguay',            estadio: 'SoFi Stadium',            ciudad: 'Los Ángeles',      grupo: 'D' },
+    { fecha: '2026-06-13', hora: '21:00', local: 'Australia',      visit: 'Turquía',             estadio: 'BC Place',                ciudad: 'Vancouver',        grupo: 'D' },
+    { fecha: '2026-06-19', hora: '15:00', local: 'Estados Unidos', visit: 'Australia',           estadio: 'Lumen Field',             ciudad: 'Seattle',          grupo: 'D' },
+    { fecha: '2026-06-19', hora: '21:00', local: 'Turquía',        visit: 'Paraguay',            estadio: "Levi's Stadium",          ciudad: 'Santa Clara',      grupo: 'D' },
+    { fecha: '2026-06-25', hora: '22:00', local: 'Turquía',        visit: 'Estados Unidos',      estadio: 'SoFi Stadium',            ciudad: 'Los Ángeles',      grupo: 'D' },
+    { fecha: '2026-06-25', hora: '22:00', local: 'Paraguay',       visit: 'Australia',           estadio: "Levi's Stadium",          ciudad: 'Santa Clara',      grupo: 'D' },
+    // ════════════════════════════════ GRUPO E ════════════════════════════════
+    { fecha: '2026-06-14', hora: '13:00', local: 'Alemania',       visit: 'Curazao',             estadio: 'NRG Stadium',             ciudad: 'Houston',          grupo: 'E' },
+    { fecha: '2026-06-14', hora: '19:00', local: 'Costa de Marfil',visit: 'Ecuador',             estadio: 'Lincoln Financial Field', ciudad: 'Filadelfia',       grupo: 'E' },
+    { fecha: '2026-06-20', hora: '16:00', local: 'Alemania',       visit: 'Costa de Marfil',     estadio: 'BMO Field',               ciudad: 'Toronto',          grupo: 'E' },
+    { fecha: '2026-06-20', hora: '20:00', local: 'Ecuador',        visit: 'Curazao',             estadio: 'Arrowhead Stadium',       ciudad: 'Kansas City',      grupo: 'E' },
+    { fecha: '2026-06-25', hora: '16:00', local: 'Ecuador',        visit: 'Alemania',            estadio: 'MetLife Stadium',         ciudad: 'Nueva Jersey',     grupo: 'E' },
+    { fecha: '2026-06-25', hora: '16:00', local: 'Curazao',        visit: 'Costa de Marfil',     estadio: 'Lincoln Financial Field', ciudad: 'Filadelfia',       grupo: 'E' },
+    // ════════════════════════════════ GRUPO F ════════════════════════════════
+    { fecha: '2026-06-14', hora: '16:00', local: 'Países Bajos',   visit: 'Japón',               estadio: 'AT&T Stadium',            ciudad: 'Dallas',           grupo: 'F' },
+    { fecha: '2026-06-14', hora: '21:00', local: 'Suecia',         visit: 'Túnez',               estadio: 'Estadio BBVA',            ciudad: 'Monterrey',        grupo: 'F' },
+    { fecha: '2026-06-20', hora: '13:00', local: 'Países Bajos',   visit: 'Suecia',              estadio: 'NRG Stadium',             ciudad: 'Houston',          grupo: 'F' },
+    { fecha: '2026-06-20', hora: '23:00', local: 'Túnez',          visit: 'Japón',               estadio: 'Estadio BBVA',            ciudad: 'Monterrey',        grupo: 'F' },
+    { fecha: '2026-06-25', hora: '19:00', local: 'Japón',          visit: 'Suecia',              estadio: 'AT&T Stadium',            ciudad: 'Dallas',           grupo: 'F' },
+    { fecha: '2026-06-25', hora: '19:00', local: 'Túnez',          visit: 'Países Bajos',        estadio: 'Arrowhead Stadium',       ciudad: 'Kansas City',      grupo: 'F' },
+    // ════════════════════════════════ GRUPO G ════════════════════════════════
+    { fecha: '2026-06-15', hora: '15:00', local: 'Bélgica',        visit: 'Egipto',              estadio: 'BC Place',                ciudad: 'Vancouver',        grupo: 'G' },
+    { fecha: '2026-06-15', hora: '21:00', local: 'Irán',           visit: 'Nueva Zelanda',       estadio: 'SoFi Stadium',            ciudad: 'Los Ángeles',      grupo: 'G' },
+    { fecha: '2026-06-21', hora: '15:00', local: 'Bélgica',        visit: 'Irán',                estadio: 'SoFi Stadium',            ciudad: 'Los Ángeles',      grupo: 'G' },
+    { fecha: '2026-06-21', hora: '21:00', local: 'Nueva Zelanda',  visit: 'Egipto',              estadio: 'BC Place',                ciudad: 'Vancouver',        grupo: 'G' },
+    { fecha: '2026-06-26', hora: '20:00', local: 'Egipto',         visit: 'Irán',                estadio: 'Lumen Field',             ciudad: 'Seattle',          grupo: 'G' },
+    { fecha: '2026-06-26', hora: '20:00', local: 'Nueva Zelanda',  visit: 'Bélgica',             estadio: 'BC Place',                ciudad: 'Vancouver',        grupo: 'G' },
+    // ════════════════════════════════ GRUPO H ════════════════════════════════
+    { fecha: '2026-06-15', hora: '12:00', local: 'España',         visit: 'Cabo Verde',          estadio: 'Mercedes-Benz Stadium',   ciudad: 'Atlanta',          grupo: 'H' },
+    { fecha: '2026-06-15', hora: '18:00', local: 'Arabia Saudita', visit: 'Uruguay',             estadio: 'Hard Rock Stadium',       ciudad: 'Miami',            grupo: 'H' },
+    { fecha: '2026-06-21', hora: '12:00', local: 'España',         visit: 'Arabia Saudita',      estadio: 'Mercedes-Benz Stadium',   ciudad: 'Atlanta',          grupo: 'H' },
+    { fecha: '2026-06-21', hora: '18:00', local: 'Uruguay',        visit: 'Cabo Verde',          estadio: 'Hard Rock Stadium',       ciudad: 'Miami',            grupo: 'H' },
+    { fecha: '2026-06-26', hora: '19:00', local: 'Cabo Verde',     visit: 'Arabia Saudita',      estadio: 'NRG Stadium',             ciudad: 'Houston',          grupo: 'H' },
+    { fecha: '2026-06-26', hora: '19:00', local: 'Uruguay',        visit: 'España',              estadio: 'Estadio Akron',           ciudad: 'Guadalajara',      grupo: 'H' },
+    // ════════════════════════════════ GRUPO I ════════════════════════════════
+    { fecha: '2026-06-16', hora: '15:00', local: 'Francia',        visit: 'Senegal',             estadio: 'MetLife Stadium',         ciudad: 'Nueva Jersey',     grupo: 'I' },
+    { fecha: '2026-06-16', hora: '18:00', local: 'Irak',           visit: 'Noruega',             estadio: 'Gillette Stadium',        ciudad: 'Boston',           grupo: 'I' },
+    { fecha: '2026-06-22', hora: '17:00', local: 'Francia',        visit: 'Irak',                estadio: 'Lincoln Financial Field', ciudad: 'Filadelfia',       grupo: 'I' },
+    { fecha: '2026-06-22', hora: '20:00', local: 'Noruega',        visit: 'Senegal',             estadio: 'MetLife Stadium',         ciudad: 'Nueva Jersey',     grupo: 'I' },
+    { fecha: '2026-06-26', hora: '15:00', local: 'Noruega',        visit: 'Francia',             estadio: 'Gillette Stadium',        ciudad: 'Boston',           grupo: 'I' },
+    { fecha: '2026-06-26', hora: '15:00', local: 'Senegal',        visit: 'Irak',                estadio: 'BMO Field',               ciudad: 'Toronto',          grupo: 'I' },
+    // ════════════════════════════════ GRUPO J ════════════════════════════════
+    { fecha: '2026-06-16', hora: '20:00', local: 'Argentina',      visit: 'Argelia',             estadio: 'Arrowhead Stadium',       ciudad: 'Kansas City',      grupo: 'J' },
+    { fecha: '2026-06-16', hora: '21:00', local: 'Austria',        visit: 'Jordania',            estadio: "Levi's Stadium",          ciudad: 'Santa Clara',      grupo: 'J' },
+    { fecha: '2026-06-22', hora: '13:00', local: 'Argentina',      visit: 'Austria',             estadio: 'AT&T Stadium',            ciudad: 'Dallas',           grupo: 'J' },
+    { fecha: '2026-06-22', hora: '21:00', local: 'Jordania',       visit: 'Argelia',             estadio: "Levi's Stadium",          ciudad: 'Santa Clara',      grupo: 'J' },
+    { fecha: '2026-06-27', hora: '21:00', local: 'Argelia',        visit: 'Austria',             estadio: 'Arrowhead Stadium',       ciudad: 'Kansas City',      grupo: 'J' },
+    { fecha: '2026-06-27', hora: '21:00', local: 'Jordania',       visit: 'Argentina',           estadio: 'AT&T Stadium',            ciudad: 'Dallas',           grupo: 'J' },
+    // ════════════════════════════════ GRUPO K ════════════════════════════════
+    { fecha: '2026-06-17', hora: '13:00', local: 'Portugal',       visit: 'Rep. Dem. Congo',     estadio: 'NRG Stadium',             ciudad: 'Houston',          grupo: 'K' },
+    { fecha: '2026-06-17', hora: '20:00', local: 'Uzbekistán',     visit: 'Colombia',            estadio: 'Estadio Azteca',          ciudad: 'Ciudad de México', grupo: 'K' },
+    { fecha: '2026-06-23', hora: '13:00', local: 'Portugal',       visit: 'Uzbekistán',          estadio: 'NRG Stadium',             ciudad: 'Houston',          grupo: 'K' },
+    { fecha: '2026-06-23', hora: '20:00', local: 'Colombia',       visit: 'Rep. Dem. Congo',     estadio: 'Estadio Akron',           ciudad: 'Guadalajara',      grupo: 'K' },
+    { fecha: '2026-06-27', hora: '19:30', local: 'Colombia',       visit: 'Portugal',            estadio: 'Hard Rock Stadium',       ciudad: 'Miami',            grupo: 'K' },
+    { fecha: '2026-06-27', hora: '19:30', local: 'Rep. Dem. Congo',visit: 'Uzbekistán',          estadio: 'Mercedes-Benz Stadium',   ciudad: 'Atlanta',          grupo: 'K' },
+    // ════════════════════════════════ GRUPO L ════════════════════════════════
+    { fecha: '2026-06-17', hora: '16:00', local: 'Inglaterra',     visit: 'Croacia',             estadio: 'AT&T Stadium',            ciudad: 'Dallas',           grupo: 'L' },
+    { fecha: '2026-06-17', hora: '19:00', local: 'Ghana',          visit: 'Panamá',              estadio: 'BMO Field',               ciudad: 'Toronto',          grupo: 'L' },
+    { fecha: '2026-06-23', hora: '16:00', local: 'Inglaterra',     visit: 'Ghana',               estadio: 'Gillette Stadium',        ciudad: 'Boston',           grupo: 'L' },
+    { fecha: '2026-06-23', hora: '19:00', local: 'Panamá',         visit: 'Croacia',             estadio: 'BMO Field',               ciudad: 'Toronto',          grupo: 'L' },
+    { fecha: '2026-06-27', hora: '17:00', local: 'Panamá',         visit: 'Inglaterra',          estadio: 'MetLife Stadium',         ciudad: 'Nueva Jersey',     grupo: 'L' },
+    { fecha: '2026-06-27', hora: '17:00', local: 'Croacia',        visit: 'Ghana',               estadio: 'Lincoln Financial Field', ciudad: 'Filadelfia',       grupo: 'L' },
   ];
 
-  const fixtures = [
-    // ── GRUPO A ──
-    ['Argentina',      'Estados Unidos', '2026-06-11', '21:00', 3],
-    ['Marruecos',      'Japón',          '2026-06-11', '18:00', 4],
-    ['Argentina',      'Marruecos',      '2026-06-18', '18:00', 5],
-    ['Japón',          'Estados Unidos', '2026-06-18', '21:00', 6],
-    ['Argentina',      'Japón',          '2026-06-25', '22:00', 7],
-    ['Estados Unidos', 'Marruecos',      '2026-06-25', '22:00', 8],
-    // ── GRUPO B ──
-    ['México',         'Francia',        '2026-06-11', '21:00', 0],
-    ['Senegal',        'Corea del Sur',  '2026-06-11', '18:00', 1],
-    ['México',         'Senegal',        '2026-06-18', '18:00', 2],
-    ['Corea del Sur',  'Francia',        '2026-06-18', '21:00', 0],
-    ['México',         'Corea del Sur',  '2026-06-25', '22:00', 1],
-    ['Francia',        'Senegal',        '2026-06-25', '22:00', 2],
-    // ── GRUPO C ──
-    ['Canadá',         'Inglaterra',     '2026-06-12', '21:00', 13],
-    ['Brasil',         'Australia',      '2026-06-12', '18:00', 4],
-    ['Canadá',         'Brasil',         '2026-06-19', '18:00', 14],
-    ['Australia',      'Inglaterra',     '2026-06-19', '21:00', 9],
-    ['Canadá',         'Australia',      '2026-06-26', '22:00', 13],
-    ['Inglaterra',     'Brasil',         '2026-06-26', '22:00', 3],
-    // ── GRUPO D ──
-    ['Alemania',       'Colombia',       '2026-06-12', '21:00', 5],
-    ['Egipto',         'Arabia Saudita', '2026-06-12', '18:00', 6],
-    ['Alemania',       'Egipto',         '2026-06-19', '18:00', 7],
-    ['Arabia Saudita', 'Colombia',       '2026-06-19', '21:00', 8],
-    ['Alemania',       'Arabia Saudita', '2026-06-26', '22:00', 5],
-    ['Colombia',       'Egipto',         '2026-06-26', '22:00', 6],
-    // ── GRUPO E ──
-    ['España',         'Uruguay',        '2026-06-13', '21:00', 7],
-    ['Irán',           'Nigeria',        '2026-06-13', '18:00', 10],
-    ['España',         'Irán',           '2026-06-20', '18:00', 11],
-    ['Nigeria',        'Uruguay',        '2026-06-20', '21:00', 12],
-    ['España',         'Nigeria',        '2026-06-27', '22:00', 7],
-    ['Uruguay',        'Irán',           '2026-06-27', '22:00', 10],
-    // ── GRUPO F ──
-    ['Portugal',       'Países Bajos',   '2026-06-13', '21:00', 8],
-    ['Serbia',         'Camerún',        '2026-06-13', '18:00', 9],
-    ['Portugal',       'Serbia',         '2026-06-20', '18:00', 4],
-    ['Camerún',        'Países Bajos',   '2026-06-20', '21:00', 3],
-    ['Portugal',       'Camerún',        '2026-06-27', '22:00', 8],
-    ['Países Bajos',   'Serbia',         '2026-06-27', '22:00', 9],
-    // ── GRUPO G ──
-    ['Italia',         'Bélgica',        '2026-06-14', '21:00', 5],
-    ['Túnez',          'Honduras',       '2026-06-14', '18:00', 0],
-    ['Italia',         'Túnez',          '2026-06-21', '18:00', 1],
-    ['Honduras',       'Bélgica',        '2026-06-21', '21:00', 2],
-    ['Italia',         'Honduras',       '2026-06-28', '22:00', 5],
-    ['Bélgica',        'Túnez',          '2026-06-28', '22:00', 0],
-    // ── GRUPO H ──
-    ['Croacia',        'Dinamarca',      '2026-06-14', '21:00', 6],
-    ['Ecuador',        'Jordania',       '2026-06-14', '18:00', 11],
-    ['Croacia',        'Ecuador',        '2026-06-21', '18:00', 12],
-    ['Jordania',       'Dinamarca',      '2026-06-21', '21:00', 13],
-    ['Croacia',        'Jordania',       '2026-06-28', '22:00', 6],
-    ['Dinamarca',      'Ecuador',        '2026-06-28', '22:00', 11],
-    // ── GRUPO I ──
-    ['Austria',        'Venezuela',      '2026-06-15', '21:00', 3],
-    ['Sudáfrica',      'Nueva Zelanda',  '2026-06-15', '18:00', 4],
-    ['Austria',        'Sudáfrica',      '2026-06-22', '18:00', 7],
-    ['Nueva Zelanda',  'Venezuela',      '2026-06-22', '21:00', 8],
-    ['Austria',        'Nueva Zelanda',  '2026-06-29', '22:00', 3],
-    ['Venezuela',      'Sudáfrica',      '2026-06-29', '22:00', 4],
-    // ── GRUPO J ──
-    ['Turquía',        'Costa Rica',     '2026-06-15', '21:00', 10],
-    ['Argelia',        'Uzbekistán',     '2026-06-15', '18:00', 9],
-    ['Turquía',        'Argelia',        '2026-06-22', '18:00', 5],
-    ['Uzbekistán',     'Costa Rica',     '2026-06-22', '21:00', 6],
-    ['Turquía',        'Uzbekistán',     '2026-06-29', '22:00', 10],
-    ['Costa Rica',     'Argelia',        '2026-06-29', '22:00', 9],
-    // ── GRUPO K ──
-    ['Escocia',        'Rumanía',        '2026-06-16', '21:00', 11],
-    ['Panamá',         'Rep. Dem. Congo','2026-06-16', '18:00', 12],
-    ['Escocia',        'Panamá',         '2026-06-23', '18:00', 13],
-    ['Rep. Dem. Congo','Rumanía',        '2026-06-23', '21:00', 14],
-    ['Escocia',        'Rep. Dem. Congo','2026-06-30', '22:00', 11],
-    ['Rumanía',        'Panamá',         '2026-06-30', '22:00', 12],
-    // ── GRUPO L ──
-    ['Rep. Checa',     'Paraguay',       '2026-06-16', '21:00', 0],
-    ['Jamaica',        'Irak',           '2026-06-16', '18:00', 1],
-    ['Rep. Checa',     'Jamaica',        '2026-06-23', '18:00', 2],
-    ['Irak',           'Paraguay',       '2026-06-23', '21:00', 3],
-    ['Rep. Checa',     'Irak',           '2026-06-30', '22:00', 0],
-    ['Paraguay',       'Jamaica',        '2026-06-30', '22:00', 1],
-  ];
-
-  for (const [local, visit, fecha, hora, estIdx] of fixtures) {
-    const grupoRow = await prepare('SELECT grupo FROM equipos WHERE nombre=$1').get(local);
-    const grupo = grupoRow.grupo;
-    const est = estadios[estIdx];
-    const localId = await eid(local);
-    const visitId = await eid(visit);
-    await prepare(
-      'INSERT INTO partidos (fase, grupo, equipo_local_id, equipo_visitante_id, fecha, hora, estadio, ciudad) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)'
-    ).run('grupos', grupo, localId, visitId, fecha, hora, est.s, est.c);
+  for (const p of partidos) {
+    const localId = tid[p.local];
+    const visitId = tid[p.visit];
+    if (!localId || !visitId) {
+      console.error(`❌ Equipo no encontrado: "${p.local}" o "${p.visit}"`);
+      continue;
+    }
+    await prepare(`
+      INSERT INTO partidos (fase, grupo, equipo_local_id, equipo_visitante_id, fecha, hora, estadio, ciudad)
+      VALUES ('grupos', $1, $2, $3, $4, $5, $6, $7)
+    `).run(p.grupo, localId, visitId, p.fecha, p.hora, p.estadio, p.ciudad);
   }
-
-  console.log(`✓ ${fixtures.length} partidos insertados`);
+  console.log('✓ 72 partidos insertados');
   console.log('✅ Base de datos lista!');
   console.log('   👤 admin / admin2026');
 }
 
 module.exports = { run };
-
-// Si se ejecuta directamente
-if (require.main === module) {
-  run().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
-}

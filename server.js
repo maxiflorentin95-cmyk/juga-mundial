@@ -57,7 +57,7 @@ async function start() {
     // Seed automático si la DB está vacía
     const row = await prepare('SELECT COUNT(*) AS c FROM equipos').get();
     const count = parseInt(row?.c ?? row?.count ?? 0);
-    if (count === 0) {
+    if (count !== 48) {
       console.log('🌱 Ejecutando seed...');
       await require('./seed').run();
     }
