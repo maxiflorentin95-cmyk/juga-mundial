@@ -116,6 +116,17 @@ router.get('/usuarios', requireAdmin, async (req, res) => {
   } catch (e) { res.status(500).send('Error'); }
 });
 
+router.post('/reseed', requireAdmin, async (req, res) => {
+  try {
+    await require('../seed').run();
+    req.session.destroy();
+    res.json({ ok: true, msg: 'Base de datos re-inicializada. Tu sesión fue cerrada — volvé a iniciar sesión con admin / admin2026.' });
+  } catch (e) {
+    console.error(e);
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
 router.post('/toggle-admin', requireAdmin, async (req, res) => {
   try {
     const { usuario_id } = req.body;
