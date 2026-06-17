@@ -1,13 +1,13 @@
 <%- include('partials/header') %>
 
-<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
   <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-left"></i> Volver
   </a>
   <h2 class="fw-bold mb-0">Ranking General</h2>
 </div>
 
-<!-- AD SLOT -->
+<!-- AD SLOT desktop -->
 <div class="ad-slot d-none d-md-flex justify-content-center mb-4">
   <div class="ad-placeholder" style="width:728px;height:90px;">
     <span class="text-muted small">Publicidad 728×90</span>
@@ -16,32 +16,39 @@
 
 <!-- Podio top 3 -->
 <% if (ranking.length >= 3) { %>
-<div class="row justify-content-center g-3 mb-4">
-  <!-- 2do -->
-  <div class="col-12 col-sm-4 col-md-3">
-    <div class="card border-0 shadow text-center py-3">
-      <div class="display-4 mb-1">🥈</div>
-      <div class="fw-bold"><%= ranking[1].username %></div>
-      <div class="fs-4 fw-bold text-secondary"><%= ranking[1].puntos_total %> <small class="fs-6">pts</small></div>
-      <div class="small text-muted"><%= ranking[1].exactos %> exactos · <%= ranking[1].resultado %> resultado</div>
-    </div>
-  </div>
-  <!-- 1ro -->
-  <div class="col-12 col-sm-4 col-md-3 order-sm-first order-md-0">
-    <div class="card border-warning border-2 shadow-lg text-center py-3">
+<div class="row justify-content-center g-2 mb-4">
+  <!-- 1ro — primero en mobile -->
+  <div class="col-12 col-sm-4 col-md-3 order-1 order-sm-2">
+    <div class="card border-warning border-2 shadow-lg text-center py-3 h-100">
       <div class="display-3 mb-1">🏆</div>
       <div class="fw-bold fs-5"><%= ranking[0].username %></div>
-      <div class="fs-3 fw-bold text-warning"><%= ranking[0].puntos_total %> <small class="fs-6">pts</small></div>
-      <div class="small text-muted"><%= ranking[0].exactos %> exactos · <%= ranking[0].resultado %> resultado</div>
+      <div class="fs-3 fw-bold text-warning"><%= ranking[0].puntos_total %> <small class="fs-6 fw-normal text-muted">pts</small></div>
+      <div class="small text-muted mt-1">
+        <span class="badge bg-warning text-dark me-1"><%= ranking[0].exactos %> 🎯</span>
+        <span class="badge bg-primary"><%= ranking[0].resultado %> ✓</span>
+      </div>
+    </div>
+  </div>
+  <!-- 2do -->
+  <div class="col-6 col-sm-4 col-md-3 order-2 order-sm-1">
+    <div class="card border-0 shadow text-center py-3 h-100">
+      <div class="display-4 mb-1">🥈</div>
+      <div class="fw-bold"><%= ranking[1].username %></div>
+      <div class="fs-4 fw-bold text-secondary"><%= ranking[1].puntos_total %> <small class="fs-6 fw-normal text-muted">pts</small></div>
+      <div class="small text-muted mt-1">
+        <span class="badge bg-warning text-dark me-1"><%= ranking[1].exactos %> 🎯</span>
+      </div>
     </div>
   </div>
   <!-- 3ro -->
-  <div class="col-12 col-sm-4 col-md-3">
-    <div class="card border-0 shadow text-center py-3">
+  <div class="col-6 col-sm-4 col-md-3 order-3">
+    <div class="card border-0 shadow text-center py-3 h-100">
       <div class="display-4 mb-1">🥉</div>
       <div class="fw-bold"><%= ranking[2].username %></div>
-      <div class="fs-4 fw-bold" style="color:#cd7f32"><%= ranking[2].puntos_total %> <small class="fs-6">pts</small></div>
-      <div class="small text-muted"><%= ranking[2].exactos %> exactos · <%= ranking[2].resultado %> resultado</div>
+      <div class="fs-4 fw-bold" style="color:#cd7f32"><%= ranking[2].puntos_total %> <small class="fs-6 fw-normal text-muted">pts</small></div>
+      <div class="small text-muted mt-1">
+        <span class="badge bg-warning text-dark me-1"><%= ranking[2].exactos %> 🎯</span>
+      </div>
     </div>
   </div>
 </div>
@@ -49,20 +56,20 @@
 
 <!-- Tabla completa -->
 <div class="card border-0 shadow-sm">
-  <div class="card-header bg-dark text-white fw-bold">
+  <div class="card-header bg-dark text-white fw-bold py-2">
     <i class="bi bi-list-ol me-2"></i>Tabla General
   </div>
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-hover mb-0 align-middle">
+      <table class="table table-hover mb-0 align-middle ranking-table">
         <thead class="table-secondary">
           <tr>
-            <th class="ps-3">#</th>
+            <th class="ps-3" style="width:40px">#</th>
             <th>Jugador</th>
-            <th class="text-center">Pronósticos</th>
-            <th class="text-center">Exactos 🎯</th>
-            <th class="text-center">Resultado ✓</th>
-            <th class="text-center fw-bold">Puntos</th>
+            <th class="text-center d-none d-sm-table-cell">Pronóst.</th>
+            <th class="text-center">🎯</th>
+            <th class="text-center d-none d-sm-table-cell">✓</th>
+            <th class="text-center fw-bold">Pts</th>
           </tr>
         </thead>
         <tbody>
@@ -72,22 +79,22 @@
               <% if (i === 0) { %><span class="fs-5">🥇</span>
               <% } else if (i === 1) { %><span class="fs-5">🥈</span>
               <% } else if (i === 2) { %><span class="fs-5">🥉</span>
-              <% } else { %><span class="text-muted fw-bold"><%= i+1 %></span>
+              <% } else { %><span class="text-muted fw-bold small"><%= i+1 %></span>
               <% } %>
             </td>
             <td>
-              <span class="fw-<%= u.id === uid ? 'bold text-primary' : 'semibold' %>">
+              <span class="fw-<%= u.id === uid ? 'bold text-primary' : 'semibold' %> ranking-nombre">
                 <%= u.username %>
               </span>
               <% if (u.id === uid) { %>
-                <span class="badge bg-primary ms-1">vos</span>
+                <span class="badge bg-primary ms-1 d-none d-sm-inline">vos</span>
               <% } %>
             </td>
-            <td class="text-center text-muted"><%= u.total_pron %></td>
+            <td class="text-center text-muted small d-none d-sm-table-cell"><%= u.total_pron %></td>
             <td class="text-center">
               <span class="badge bg-warning text-dark"><%= u.exactos %></span>
             </td>
-            <td class="text-center">
+            <td class="text-center d-none d-sm-table-cell">
               <span class="badge bg-primary"><%= u.resultado %></span>
             </td>
             <td class="text-center fw-bold fs-6 text-<%= i===0 ? 'warning' : i===1 ? 'secondary' : i===2 ? 'danger' : 'dark' %>">
