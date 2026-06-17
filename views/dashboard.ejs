@@ -65,7 +65,7 @@
                 </div>
               <% } else { %>
                 <div class="text-center text-muted small">
-                  <div class="fw-bold"><%= p.hora %></div>
+                  <div class="fw-bold"><%= p.hora %> <small class="text-muted">PY</small></div>
                   <div><%- cerrado ? '<span class="badge bg-danger">Cerrado</span>' : '<span class="badge bg-success">Abierto</span>' %></div>
                 </div>
               <% } %>
@@ -115,7 +115,7 @@
             <span class="fw-semibold"><%= p.local_bandera %> <%= p.local_nombre %> vs <%= p.visit_nombre %> <%= p.visit_bandera %></span>
             <div class="text-muted small">
               <%= new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}) %>
-              <%= p.hora %> · Grupo <%= p.grupo %>
+              <%= p.hora %> PY · Grupo <%= p.grupo %>
             </div>
           </div>
           <a href="/pronosticos" class="btn btn-sm btn-outline-secondary">Pronosticar</a>
