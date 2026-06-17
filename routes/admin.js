@@ -3,7 +3,7 @@ const { prepare, pool } = require('../db');
 const { requireAdmin } = require('../middleware/auth');
 
 function calcularPuntos(pL, pV, rL, rV) {
-  if (pL === rL && pV === rV) return 3;
+  if (pL === rL && pV === rV) return 5;
   if (Math.sign(pL - pV) === Math.sign(rL - rV)) return 1;
   return 0;
 }
