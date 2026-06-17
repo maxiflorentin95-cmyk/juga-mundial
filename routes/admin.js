@@ -1,6 +1,23 @@
 const router = require('express').Router();
+const bcrypt = require('bcryptjs');
 const { prepare, pool } = require('../db');
 const { requireAdmin } = require('../middleware/auth');
+
+const USUARIOS_IMPORTAR = [
+  { username: 'mfiorentin',  nombre: 'Maxi Florentin',      email: 'maxiflorentin95@gmail.com',              admin: 1 },
+  { username: 'Chrisis',     nombre: 'Christian Escurra',   email: 'escurra014@gmail.com',                   admin: 0 },
+  { username: 'Ortepro18',   nombre: 'Elias Ortega',        email: 'eliasrubenortega.rodriguez@gmail.com',   admin: 0 },
+  { username: 'MrPomberoPY', nombre: 'Fernando Groselle',   email: 'fergroselle9@gmail.com',                 admin: 0 },
+  { username: 'HugoLoup',    nombre: 'Hugo Loup',           email: 'loupcontabilidad@gmail.com',             admin: 0 },
+  { username: 'Luisma',      nombre: 'Luis Mario Gonzalez', email: 'gonzalezvallejoslm@gmail.com',           admin: 0 },
+  { username: 'Ferfre',      nombre: 'Fernando Fretes',     email: 'ferfretes14@gmail.com',                  admin: 0 },
+  { username: 'Loche',       nombre: 'Marcelo Aguero',      email: 'marceloaguero1497@gmail.com',            admin: 0 },
+  { username: 'JulioMarti',  nombre: 'Julio Martinez',      email: 'julcesmartinez24@gmail.com',             admin: 0 },
+  { username: 'Ronaldraf',   nombre: 'Ronald Martinez',     email: 'ronaldraf28@gmail.com',                  admin: 0 },
+  { username: 'Williiam',    nombre: 'William Ramos',       email: 'williawas95@gmail.com',                  admin: 0 },
+  { username: 'Chebis',      nombre: 'Sebastian Avalos',    email: 'sebastianavalos94@gmail.com',            admin: 0 },
+  { username: 'JoeAlca',     nombre: 'Joel Alcaraz',        email: 'joelalcaraz6@gmail.com',                 admin: 0 },
+];
 
 function calcularPuntos(pL, pV, rL, rV) {
   if (pL === rL && pV === rV) return 5;
@@ -114,6 +131,23 @@ router.get('/usuarios', requireAdmin, async (req, res) => {
     const usuarios = await prepare('SELECT id, username, email, es_admin, puntos_total, created_at FROM usuarios ORDER BY username').all();
     res.render('admin/usuarios', { title: 'Gestión de Usuarios', usuarios });
   } catch (e) { res.status(500).send('Error'); }
+});
+
+router.post('/importar-usuarios', requireAdmin, async (req, res) => {
+  const hash = bcrypt.hashSync('mundial2026', 10);
+  const resultados = [];
+  for (const u of USUARIOS_IMPORTAR) {
+    try {
+      const existe = await prepare('SELECT id FROM usuarios WHERE username=$1 OR email=$2').get(u.username, u.email);
+      if (existe) { resultados.push({ username: u.username, ok: false, msg: 'ya existe' }); continue; }
+      await prepare('INSERT INTO usuarios (username, email, password_hash, es_admin) VALUES ($1,$2,$3,$4)')
+        .run(u.username, u.email, hash, u.admin);
+      resultados.push({ username: u.username, ok: true, msg: 'creado' });
+    } catch (e) {
+      resultados.push({ username: u.username, ok: false, msg: e.message });
+    }
+  }
+  res.json({ ok: true, resultados });
 });
 
 router.post('/reseed', requireAdmin, async (req, res) => {
