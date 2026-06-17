@@ -6,101 +6,152 @@
   --juga-red:    #dc3545;
   --juga-dark:   #212529;
   --juga-yellow: #ffc107;
+  --bottom-nav-h: 64px;
 }
 
-/* ─── Login ─────────────────────────────────────────────────── */
-.login-card {
-  margin: 1rem auto;
-  border-radius: 1rem;
-}
+/* ─── Login ──────────────────────────────────────────────────── */
+.login-card { margin: 1rem auto; border-radius: 1rem; }
 
 /* ─── Navbar ─────────────────────────────────────────────────── */
-.navbar-brand {
-  letter-spacing: -.5px;
-}
+.navbar-brand { letter-spacing: -.5px; }
 
 /* ─── Partido rows ───────────────────────────────────────────── */
-.partido-row:last-child {
-  border-bottom: none !important;
-}
-
-.score-box {
-  font-size: 1.1rem;
-  min-width: 70px;
-  text-align: center;
-}
+.partido-row:last-child { border-bottom: none !important; }
+.score-box { font-size: 1.1rem; min-width: 70px; text-align: center; }
 
 /* ─── Cards ──────────────────────────────────────────────────── */
-.partido-card {
-  transition: transform .15s, box-shadow .15s;
-}
+.partido-card { transition: transform .15s, box-shadow .15s; }
 .partido-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.12) !important;
 }
 
 /* ─── Pronóstico inputs ──────────────────────────────────────── */
-.pron-local,
-.pron-visit,
-.res-local,
-.res-visit {
-  font-size: 1.1rem;
-  font-weight: 700;
+.pron-local, .pron-visit, .res-local, .res-visit {
+  font-size: 1.1rem; font-weight: 700;
 }
 
 /* ─── Tabs grupo ─────────────────────────────────────────────── */
-#grupoTabs {
-  border-bottom: 2px solid var(--juga-blue);
-}
-#grupoTabs .nav-link {
-  font-size: .85rem;
-  padding: .4rem .75rem;
-  color: #555;
-}
+#grupoTabs { border-bottom: 2px solid var(--juga-blue); }
+#grupoTabs .nav-link { font-size: .85rem; padding: .4rem .75rem; color: #555; }
 #grupoTabs .nav-link.active {
-  background: var(--juga-blue);
-  color: #fff;
-  border-color: var(--juga-blue);
+  background: var(--juga-blue); color: #fff; border-color: var(--juga-blue);
 }
 
 /* ─── Tabla de posiciones ────────────────────────────────────── */
-.table-success td {
-  background-color: rgba(25, 135, 84, .08) !important;
-}
+.table-success td { background-color: rgba(25, 135, 84, .08) !important; }
 
 /* ─── Ad slots ───────────────────────────────────────────────── */
 .ad-placeholder {
-  background: repeating-linear-gradient(
-    45deg,
-    #f0f0f0 0, #f0f0f0 10px,
-    #e8e8e8 10px, #e8e8e8 20px
-  );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: .5rem;
-  border: 1px dashed #ccc;
-}
-
-/* ─── Mobile ─────────────────────────────────────────────────── */
-@media (max-width: 576px) {
-  .ad-slot { display: none !important; }
-  .ad-slot.d-flex.d-md-none { display: flex !important; }
-
-  .partido-card .card-body {
-    padding: .75rem;
-  }
-
-  h2.fw-bold {
-    font-size: 1.25rem;
-  }
+  background: repeating-linear-gradient(45deg,#f0f0f0 0,#f0f0f0 10px,#e8e8e8 10px,#e8e8e8 20px);
+  display: flex; align-items: center; justify-content: center;
+  border-radius: .5rem; border: 1px dashed #ccc;
 }
 
 /* ─── Footer ─────────────────────────────────────────────────── */
-footer {
-  font-size: .8rem;
-  border-top: 2px solid var(--juga-blue) !important;
-}
+footer { font-size: .8rem; border-top: 2px solid var(--juga-blue) !important; }
 
 /* ─── Podio ──────────────────────────────────────────────────── */
 .podio-1 { transform: translateY(-10px); }
+
+/* ══════════════════════════════════════════════════════════════
+   BOTTOM NAV (solo mobile/tablet)
+   ══════════════════════════════════════════════════════════════ */
+.bottom-nav { display: none; }
+
+@media (max-width: 991px) {
+
+  /* Ocultar links del navbar en mobile — reemplazado por bottom nav */
+  .navbar .navbar-collapse { display: none !important; }
+  .navbar-toggler { display: none !important; }
+
+  /* Mostrar puntos del usuario en la navbar top */
+  .navbar-mobile-info { display: flex !important; }
+
+  /* Espacio para la barra inferior */
+  body { padding-bottom: var(--bottom-nav-h); }
+  main { padding-bottom: calc(var(--bottom-nav-h) + .5rem) !important; }
+  footer { display: none; }
+
+  /* ── Bottom nav bar ── */
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--bottom-nav-h);
+    background: #111827;
+    border-top: 1px solid #2d3748;
+    z-index: 1050;
+    box-shadow: 0 -4px 16px rgba(0,0,0,.4);
+  }
+
+  .bottom-nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: .62rem;
+    font-weight: 600;
+    gap: 2px;
+    padding: 6px 2px;
+    border-top: 3px solid transparent;
+    transition: all .15s;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+  }
+  .bottom-nav a i { font-size: 1.25rem; }
+  .bottom-nav a.active { color: var(--juga-blue); border-top-color: var(--juga-blue); background: rgba(13,110,253,.08); }
+  .bottom-nav a:hover:not(.active) { color: #d1d5db; background: rgba(255,255,255,.05); }
+
+  /* ── Layouts ── */
+  .ad-slot { display: none !important; }
+  h2.fw-bold { font-size: 1.2rem; }
+  .partido-card .card-body { padding: .75rem; }
+
+  /* Partido row compacto */
+  .partido-row { padding: .6rem .75rem !important; }
+
+  /* Tabs grupos — scroll horizontal sin scrollbar */
+  #grupoTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #grupoTabs::-webkit-scrollbar { display: none; }
+  #grupoTabs .nav-link { font-size: .78rem; padding: .3rem .55rem; white-space: nowrap; }
+
+  /* Tabla grupos compacta */
+  .table th, .table td { padding: .35rem .4rem; font-size: .82rem; }
+
+  /* Inputs pronóstico — más grandes para dedo */
+  .pron-local, .pron-visit {
+    width: 64px !important;
+    height: 52px !important;
+    font-size: 1.5rem !important;
+    text-align: center;
+    padding: 0 !important;
+    border-radius: .5rem !important;
+  }
+
+  /* Botones en pronósticos */
+  .btn-guardar-pron { height: 44px; font-size: 1rem !important; }
+
+  /* Emojis de banderas más chicos en mobile */
+  .partido-card .fs-2 { font-size: 1.5rem !important; }
+  .partido-card .fw-bold.small { font-size: .76rem !important; }
+
+  /* Stats pronosticos */
+  .col-6.col-md-3 .fw-bold.fs-4 { font-size: 1.3rem !important; }
+
+  /* Ranking compacto */
+  .ranking-nombre { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+@media (max-width: 400px) {
+  .bottom-nav a { font-size: .58rem; }
+  .bottom-nav a i { font-size: 1.1rem; }
+}
