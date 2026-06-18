@@ -38,6 +38,12 @@
       <a class="nav-link text-light <%= title==='Grupos' ? 'fw-bold' : '' %>" href="/grupos">
         <i class="bi bi-grid-3x3-gap-fill"></i> Grupos
       </a>
+      <a class="nav-link text-light <%= title==='Partidos de Hoy' ? 'fw-bold' : '' %>" href="/hoy">
+        <i class="bi bi-calendar-day-fill"></i> Hoy
+      </a>
+      <a class="nav-link text-light <%= title==='Historial de Partidos' ? 'fw-bold' : '' %>" href="/historial">
+        <i class="bi bi-clock-history"></i> Historial
+      </a>
       <a class="nav-link text-light <%= title==='Mis Pronósticos' ? 'fw-bold' : '' %>" href="/pronosticos">
         <i class="bi bi-pencil-square"></i> Pronósticos
       </a>
@@ -68,9 +74,13 @@
     <i class="bi bi-house-fill"></i>
     <span>Inicio</span>
   </a>
-  <a href="/grupos" class="<%= title==='Grupos' ? 'active' : '' %>">
-    <i class="bi bi-grid-3x3-gap-fill"></i>
-    <span>Grupos</span>
+  <a href="/hoy" class="<%= title==='Partidos de Hoy' ? 'active' : '' %>">
+    <i class="bi bi-calendar-day-fill"></i>
+    <span>Hoy</span>
+  </a>
+  <a href="/historial" class="<%= title==='Historial de Partidos' ? 'active' : '' %>">
+    <i class="bi bi-clock-history"></i>
+    <span>Historial</span>
   </a>
   <a href="/pronosticos" class="<%= title==='Mis Pronósticos' ? 'active' : '' %>">
     <i class="bi bi-pencil-square"></i>

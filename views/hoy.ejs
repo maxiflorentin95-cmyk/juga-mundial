@@ -1,0 +1,121 @@
+<%- include('partials/header') %>
+
+<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+  <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i> Volver
+  </a>
+  <div>
+    <h2 class="fw-bold mb-0">Partidos de Hoy</h2>
+    <div class="text-muted small">
+      <%= new Date(hoy + 'T12:00:00Z').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}) %>
+    </div>
+  </div>
+</div>
+
+<% if (partidos.length === 0) { %>
+<div class="alert alert-info d-flex align-items-center">
+  <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+  <div>No hay partidos programados para hoy.</div>
+</div>
+<% } else { %>
+<div class="row g-3">
+  <% partidos.forEach(p => { %>
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card border-0 shadow-sm h-100">
+
+      <!-- Header -->
+      <div class="card-header py-2 <%= p.estado === 'finalizado' ? 'bg-success' : p.cerrado ? 'bg-secondary' : 'bg-primary' %> text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="small">
+            <span class="badge bg-white bg-opacity-25 me-1">Grupo <%= p.grupo %></span>
+            <i class="bi bi-clock me-1"></i><%= p.hora %> PY
+          </div>
+          <span class="badge <%= p.estado==='finalizado' ? 'bg-light text-success fw-bold' : p.cerrado ? 'bg-danger' : 'bg-light text-dark' %>">
+            <%= p.estado==='finalizado' ? 'Finalizado' : p.cerrado ? 'En juego' : 'Pendiente' %>
+          </span>
+        </div>
+      </div>
+
+      <div class="card-body pb-2">
+        <!-- Equipos -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div class="text-center flex-grow-1">
+            <div class="fs-2 lh-1"><%= p.local_bandera %></div>
+            <div class="fw-bold small mt-1"><%= p.local_corto %></div>
+          </div>
+          <div class="text-center px-2">
+            <% if (p.estado === 'finalizado') { %>
+              <span class="badge bg-dark fs-5 px-3 py-2 lh-1">
+                <%= p.goles_local %> – <%= p.goles_visitante %>
+              </span>
+              <div class="text-muted" style="font-size:.7rem">Resultado</div>
+            <% } else { %>
+              <span class="text-muted fw-bold fs-5">VS</span>
+            <% } %>
+          </div>
+          <div class="text-center flex-grow-1">
+            <div class="fs-2 lh-1"><%= p.visit_bandera %></div>
+            <div class="fw-bold small mt-1"><%= p.visit_corto %></div>
+          </div>
+        </div>
+
+        <div class="text-muted small text-center mb-3">
+          <i class="bi bi-geo-alt"></i> <%= p.estadio %>
+        </div>
+
+        <!-- Porcentajes (siempre visibles si hay pronósticos) -->
+        <% if (p.total_prons > 0) { %>
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>¿Quién ganará?</span>
+            <span class="text-primary"><%= p.total_prons %> pronósticos</span>
+          </div>
+          <div class="progress rounded-pill" style="height:22px">
+            <% if (p.pct_local > 0) { %>
+            <div class="progress-bar bg-primary fw-bold" style="width:<%= p.pct_local %>%">
+              <%= p.pct_local > 12 ? p.pct_local + '%' : '' %>
+            </div>
+            <% } %>
+            <% if (p.pct_empate > 0) { %>
+            <div class="progress-bar bg-secondary fw-bold" style="width:<%= p.pct_empate %>%">
+              <%= p.pct_empate > 12 ? p.pct_empate + '%' : '' %>
+            </div>
+            <% } %>
+            <% if (p.pct_visita > 0) { %>
+            <div class="progress-bar bg-danger fw-bold" style="width:<%= p.pct_visita %>%">
+              <%= p.pct_visita > 12 ? p.pct_visita + '%' : '' %>
+            </div>
+            <% } %>
+          </div>
+          <div class="d-flex justify-content-between small mt-1 px-1">
+            <span class="text-primary fw-semibold"><%= p.pct_local %>% Local</span>
+            <span class="text-secondary"><%= p.pct_empate %>% Empate</span>
+            <span class="text-danger fw-semibold"><%= p.pct_visita %>% Visit.</span>
+          </div>
+        </div>
+        <% } else { %>
+        <div class="text-center text-muted small mb-2">Sin pronósticos cargados</div>
+        <% } %>
+      </div>
+
+      <!-- Footer con botones -->
+      <div class="card-footer bg-transparent pt-0 pb-2 d-flex gap-2 justify-content-end">
+        <% if (!p.cerrado) { %>
+        <a href="/pronosticos" class="btn btn-primary btn-sm">
+          <i class="bi bi-pencil-square me-1"></i>Pronosticar
+        </a>
+        <% } %>
+        <% if (p.estado === 'finalizado') { %>
+        <a href="/historial?partido=<%= p.id %>" class="btn btn-outline-success btn-sm">
+          <i class="bi bi-list-ul me-1"></i>Ver historial
+        </a>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+  <% }) %>
+</div>
+<% } %>
+
+<%- include('partials/footer') %>

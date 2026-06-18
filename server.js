@@ -34,6 +34,8 @@ app.use('/grupos', require('./routes/grupos'));
 app.use('/pronosticos', require('./routes/pronosticos'));
 app.use('/ranking', require('./routes/ranking'));
 app.use('/admin', require('./routes/admin'));
+app.use('/hoy', require('./routes/hoy'));
+app.use('/historial', require('./routes/historial'));
 
 // Health check – muestra estado de DB
 app.get('/health', async (req, res) => {
