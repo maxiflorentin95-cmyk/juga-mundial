@@ -212,6 +212,8 @@ router.post('/corregir-horarios', requireAdmin, async (req, res) => {
 });
 
 router.post('/sync', requireAdmin, async (req, res) => {
+  if (!process.env.API_FOOTBALL_KEY)
+    return res.json({ ok: false, msg: 'Falta la variable de entorno API_FOOTBALL_KEY' });
   try {
     const { sync } = require('../scripts/sync-api-football');
     const result = await sync();

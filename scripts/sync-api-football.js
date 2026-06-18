@@ -106,8 +106,16 @@ async function fetchFixtures() {
   const resp = await fetch(url, { headers: { 'x-apisports-key': API_KEY } });
   if (!resp.ok) throw new Error(`API-Football HTTP ${resp.status}`);
   const json = await resp.json();
-  if (json.errors && Object.keys(json.errors).length)
-    throw new Error(`API-Football errores: ${JSON.stringify(json.errors)}`);
+  if (json.errors && Object.keys(json.errors).length) {
+    const errMsg = JSON.stringify(json.errors);
+    // Plan gratuito no soporta temporada 2026
+    if (errMsg.includes('Free plans') || errMsg.includes('do not have access')) {
+      const e = new Error(errMsg);
+      e.planError = true;
+      throw e;
+    }
+    throw new Error(`API-Football errores: ${errMsg}`);
+  }
   return json.response; // array de fixtures
 }
 

@@ -180,7 +180,13 @@ document.getElementById('btnSync').addEventListener('click', async function() {
   try {
     const r = await fetch('/admin/sync', { method: 'POST' }).then(x => x.json());
     if (r.ok) {
-      msg.innerHTML = `<div class="alert alert-success py-2">✓ ${r.actualizados} partido(s) actualizado(s)${r.errores.length ? '<br>Errores: ' + r.errores.join(', ') : ''}</div>`;
+      msg.innerHTML = `<div class="alert alert-success py-2">✓ ${r.actualizados} partido(s) actualizado(s)${r.errores && r.errores.length ? '<br>Errores: ' + r.errores.join(', ') : ''}</div>`;
+    } else if (r.msg && r.msg.includes('Free plans')) {
+      msg.innerHTML = `<div class="alert alert-warning py-2">
+        <strong>Plan gratuito de API-Football no incluye 2026.</strong><br>
+        Opciones: <a href="https://dashboard.api-football.com" target="_blank">actualizar plan</a>
+        o cargar resultados manualmente desde el panel de arriba.
+      </div>`;
     } else {
       msg.innerHTML = `<div class="alert alert-danger py-2">${r.msg}</div>`;
     }
