@@ -227,7 +227,7 @@ router.post('/resetear-passwords', requireAdmin, async (req, res) => {
     let actualizados = 0;
     for (const u of usuarios) {
       const hash = await bcrypt.hash(u.username + '2026', 10);
-      await prepare('UPDATE usuarios SET password=$1 WHERE id=$2').run(hash, u.id);
+      await prepare('UPDATE usuarios SET password_hash=$1 WHERE id=$2').run(hash, u.id);
       actualizados++;
     }
     res.json({ ok: true, msg: `Contraseñas reseteadas para ${actualizados} usuarios` });
