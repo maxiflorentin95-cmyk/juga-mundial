@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { prepare } = require('../db');
 const { requireLogin } = require('../middleware/auth');
 
-const CIERRE_MINUTOS = 5;
+const CIERRE_MINUTOS = 0;
 
 function estaCerrado(fecha, hora) {
   const matchTime = new Date(`${fecha}T${hora}:00`);
