@@ -25,6 +25,7 @@
       <div class="fs-3 fw-bold text-warning"><%= ranking[0].puntos_total %> <small class="fs-6 fw-normal text-muted">pts</small></div>
       <div class="small text-muted mt-1">
         <span class="badge bg-warning text-dark me-1"><%= ranking[0].exactos %> 🎯</span>
+        <span class="badge bg-success me-1"><%= ranking[0].diferencia %> ≈</span>
         <span class="badge bg-primary"><%= ranking[0].resultado %> ✓</span>
       </div>
     </div>
@@ -68,7 +69,8 @@
             <th>Jugador</th>
             <th class="text-center d-none d-sm-table-cell">Pronóst.</th>
             <th class="text-center">🎯</th>
-            <th class="text-center d-none d-sm-table-cell">✓</th>
+            <th class="text-center d-none d-sm-table-cell">≈</th>
+            <th class="text-center d-none d-md-table-cell">✓</th>
             <th class="text-center fw-bold">Pts</th>
           </tr>
         </thead>
@@ -95,6 +97,9 @@
               <span class="badge bg-warning text-dark"><%= u.exactos %></span>
             </td>
             <td class="text-center d-none d-sm-table-cell">
+              <span class="badge bg-success"><%= u.diferencia %></span>
+            </td>
+            <td class="text-center d-none d-md-table-cell">
               <span class="badge bg-primary"><%= u.resultado %></span>
             </td>
             <td class="text-center fw-bold fs-6 text-<%= i===0 ? 'warning' : i===1 ? 'secondary' : i===2 ? 'danger' : 'dark' %>">

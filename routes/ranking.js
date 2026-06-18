@@ -6,12 +6,16 @@ router.get('/', requireLogin, async (req, res) => {
   try {
     const uid = req.session.usuario.id;
     const ranking = await prepare(`
-      SELECT u.id, u.username, u.puntos_total,
-        (SELECT COUNT(*) FROM pronosticos pr WHERE pr.usuario_id=u.id AND pr.puntos_obtenidos=3) AS exactos,
-        (SELECT COUNT(*) FROM pronosticos pr WHERE pr.usuario_id=u.id AND pr.puntos_obtenidos=1) AS resultado,
-        (SELECT COUNT(*) FROM pronosticos pr WHERE pr.usuario_id=u.id) AS total_pron
+      SELECT u.id, u.username,
+        COALESCE(SUM(pr.puntos_obtenidos), 0) AS puntos_total,
+        COUNT(CASE WHEN pr.puntos_obtenidos=5 THEN 1 END) AS exactos,
+        COUNT(CASE WHEN pr.puntos_obtenidos=3 THEN 1 END) AS diferencia,
+        COUNT(CASE WHEN pr.puntos_obtenidos=2 THEN 1 END) AS resultado,
+        COUNT(pr.id) AS total_pron
       FROM usuarios u
-      ORDER BY u.puntos_total DESC, exactos DESC
+      LEFT JOIN pronosticos pr ON pr.usuario_id = u.id
+      GROUP BY u.id, u.username
+      ORDER BY puntos_total DESC, exactos DESC, diferencia DESC
     `).all();
 
     const miPos = ranking.findIndex(u => u.id === uid) + 1;

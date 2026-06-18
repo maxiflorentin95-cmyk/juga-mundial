@@ -221,6 +221,21 @@ router.post('/sync', requireAdmin, async (req, res) => {
   }
 });
 
+router.post('/recalcular-puntos', requireAdmin, async (req, res) => {
+  try {
+    await prepare(`
+      UPDATE usuarios SET puntos_total = (
+        SELECT COALESCE(SUM(puntos_obtenidos), 0)
+        FROM pronosticos WHERE usuario_id = usuarios.id
+      )
+    `).run();
+    const usuarios = await prepare('SELECT username, puntos_total FROM usuarios ORDER BY puntos_total DESC').all();
+    res.json({ ok: true, msg: `Puntos recalculados para ${usuarios.length} usuarios`, ranking: usuarios });
+  } catch (e) {
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
 router.post('/resetear-passwords', requireAdmin, async (req, res) => {
   try {
     const usuarios = await prepare('SELECT id, username FROM usuarios').all();
