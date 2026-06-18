@@ -238,6 +238,74 @@ router.post('/recalcular-puntos', requireAdmin, async (req, res) => {
   }
 });
 
+// Lista de partidos con conteo de pronósticos (para el selector del admin)
+router.get('/partidos-lista', requireAdmin, async (req, res) => {
+  try {
+    const rows = await prepare(`
+      SELECT p.id, p.fecha, p.hora, p.grupo,
+             el.nombre AS local, ev.nombre AS visit,
+             COUNT(pr.id) AS total
+      FROM partidos p
+      JOIN equipos el ON p.equipo_local_id = el.id
+      JOIN equipos ev ON p.equipo_visitante_id = ev.id
+      LEFT JOIN pronosticos pr ON pr.partido_id = p.id
+      GROUP BY p.id, p.fecha, p.hora, p.grupo, el.nombre, ev.nombre
+      ORDER BY p.fecha, p.hora
+    `).all();
+    res.json(rows);
+  } catch (e) { res.json([]); }
+});
+
+// Borrar pronósticos de un partido específico y revertir sus puntos
+router.post('/limpiar-partido', requireAdmin, async (req, res) => {
+  try {
+    const { partido_id } = req.body;
+    if (!partido_id) return res.json({ ok: false, msg: 'Falta partido_id' });
+
+    const partido = await prepare(
+      'SELECT p.*, el.nombre AS local, ev.nombre AS visit FROM partidos p JOIN equipos el ON p.equipo_local_id=el.id JOIN equipos ev ON p.equipo_visitante_id=ev.id WHERE p.id=$1'
+    ).get(partido_id);
+    if (!partido) return res.json({ ok: false, msg: 'Partido no encontrado' });
+
+    // Revertir puntos de cada pronóstico
+    const prons = await prepare('SELECT * FROM pronosticos WHERE partido_id=$1').all(partido_id);
+    for (const pr of prons) {
+      if (pr.puntos_obtenidos > 0) {
+        await prepare('UPDATE usuarios SET puntos_total = GREATEST(0, puntos_total - $1) WHERE id=$2')
+          .run(pr.puntos_obtenidos, pr.usuario_id);
+      }
+    }
+
+    // Borrar todos los pronósticos del partido
+    await prepare('DELETE FROM pronosticos WHERE partido_id=$1').run(partido_id);
+
+    res.json({ ok: true, msg: `✓ ${prons.length} pronósticos eliminados de "${partido.local} vs ${partido.visit}". Puntos revertidos.`, cantidad: prons.length });
+  } catch (e) {
+    console.error(e);
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
+// Renombrar usuario
+router.post('/renombrar-usuario', requireAdmin, async (req, res) => {
+  try {
+    const { username_actual, username_nuevo } = req.body;
+    if (!username_actual || !username_nuevo) return res.json({ ok: false, msg: 'Faltan campos' });
+
+    const existe = await prepare('SELECT id FROM usuarios WHERE username=$1').get(username_actual);
+    if (!existe) return res.json({ ok: false, msg: `Usuario "${username_actual}" no encontrado` });
+
+    const ocupado = await prepare('SELECT id FROM usuarios WHERE username=$1').get(username_nuevo);
+    if (ocupado) return res.json({ ok: false, msg: `El nombre "${username_nuevo}" ya está en uso` });
+
+    await prepare('UPDATE usuarios SET username=$1 WHERE username=$2').run(username_nuevo, username_actual);
+    res.json({ ok: true, msg: `✓ "${username_actual}" renombrado a "${username_nuevo}"` });
+  } catch (e) {
+    console.error(e);
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
 router.post('/resetear-passwords', requireAdmin, async (req, res) => {
   try {
     const usuarios = await prepare('SELECT id, username FROM usuarios').all();

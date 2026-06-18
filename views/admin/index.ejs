@@ -132,6 +132,60 @@
       </div>
     </div>
   </div>
+
+  <!-- Limpiar partido -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm border-danger">
+      <div class="card-header bg-danger text-white fw-bold">
+        <i class="bi bi-trash-fill me-2"></i>Limpiar pronósticos de un partido
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">Borra todos los pronósticos de un partido y revierte los puntos. Útil si nadie pudo completar a tiempo.</p>
+        <div class="d-flex gap-2 flex-wrap mb-2">
+          <select id="selPartidoLimpiar" class="form-select" style="max-width:320px">
+            <option value="">— Seleccioná un partido —</option>
+            <% grupos.forEach(g => { %>
+            <optgroup label="Grupo <%= g %>">
+            <% /* partidos cargados via stats, usamos un endpoint separado */ %>
+            </optgroup>
+            <% }) %>
+          </select>
+          <button id="btnLimpiarPartido" class="btn btn-danger" disabled>
+            <i class="bi bi-trash me-1"></i>Limpiar
+          </button>
+        </div>
+        <div id="limpiarMsg" class="small mt-2"></div>
+        <div class="mt-2">
+          <a href="#" id="btnCargarPartidos" class="small text-primary">Cargar lista de partidos</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Renombrar usuario -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-secondary text-white fw-bold">
+        <i class="bi bi-pencil-fill me-2"></i>Renombrar usuario
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">Cambia el nombre de usuario sin perder datos.</p>
+        <div class="row g-2 mb-2">
+          <div class="col">
+            <input type="text" id="inpUsernameActual" class="form-control" placeholder="Nombre actual" value="mfiorentin">
+          </div>
+          <div class="col-auto d-flex align-items-center text-muted"><i class="bi bi-arrow-right"></i></div>
+          <div class="col">
+            <input type="text" id="inpUsernameNuevo" class="form-control" placeholder="Nombre nuevo" value="Maxifl">
+          </div>
+        </div>
+        <button id="btnRenombrar" class="btn btn-secondary">
+          <i class="bi bi-check2 me-1"></i>Renombrar
+        </button>
+        <div id="renombrarMsg" class="small mt-2"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -195,6 +249,68 @@ document.getElementById('btnSync').addEventListener('click', async function() {
   }
   this.disabled = false;
   this.innerHTML = '<i class="bi bi-cloud-download me-2"></i>Sincronizar ahora';
+});
+
+// Cargar lista de partidos para el selector
+document.getElementById('btnCargarPartidos').addEventListener('click', async function(e) {
+  e.preventDefault();
+  this.textContent = 'Cargando...';
+  try {
+    const partidos = await fetch('/admin/partidos-lista').then(r => r.json());
+    const sel = document.getElementById('selPartidoLimpiar');
+    sel.innerHTML = '<option value="">— Seleccioná un partido —</option>';
+    partidos.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.fecha} · ${p.local} vs ${p.visit} (${p.total} prons)`;
+      sel.appendChild(opt);
+    });
+    document.getElementById('btnLimpiarPartido').disabled = false;
+    this.style.display = 'none';
+  } catch(e) { this.textContent = 'Error al cargar'; }
+});
+
+document.getElementById('btnLimpiarPartido').addEventListener('click', async function() {
+  const id = document.getElementById('selPartidoLimpiar').value;
+  if (!id) return;
+  const txt = document.getElementById('selPartidoLimpiar').selectedOptions[0].text;
+  if (!confirm(`¿Borrar TODOS los pronósticos de:\n${txt}?\n\nEsta acción no se puede deshacer.`)) return;
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Limpiando...';
+  const msg = document.getElementById('limpiarMsg');
+  try {
+    const r = await fetch('/admin/limpiar-partido', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ partido_id: id })
+    }).then(x => x.json());
+    msg.innerHTML = r.ok
+      ? `<div class="alert alert-success py-2">${r.msg}</div>`
+      : `<div class="alert alert-danger py-2">${r.msg}</div>`;
+  } catch(e) { msg.innerHTML = `<div class="alert alert-danger py-2">Error de red</div>`; }
+  this.disabled = false;
+  this.innerHTML = '<i class="bi bi-trash me-1"></i>Limpiar';
+});
+
+document.getElementById('btnRenombrar').addEventListener('click', async function() {
+  const actual = document.getElementById('inpUsernameActual').value.trim();
+  const nuevo  = document.getElementById('inpUsernameNuevo').value.trim();
+  if (!actual || !nuevo) return;
+  if (!confirm(`¿Renombrar "${actual}" → "${nuevo}"?`)) return;
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
+  const msg = document.getElementById('renombrarMsg');
+  try {
+    const r = await fetch('/admin/renombrar-usuario', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ username_actual: actual, username_nuevo: nuevo })
+    }).then(x => x.json());
+    msg.innerHTML = r.ok
+      ? `<div class="alert alert-success py-2">${r.msg}</div>`
+      : `<div class="alert alert-danger py-2">${r.msg}</div>`;
+    if (r.ok) { document.getElementById('inpUsernameActual').value = nuevo; }
+  } catch(e) { msg.innerHTML = `<div class="alert alert-danger py-2">Error de red</div>`; }
+  this.disabled = false;
+  this.innerHTML = '<i class="bi bi-check2 me-1"></i>Renombrar';
 });
 </script>
 
