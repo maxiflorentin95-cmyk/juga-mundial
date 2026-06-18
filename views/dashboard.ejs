@@ -50,8 +50,9 @@
         <%
           const pron = pronMap[p.id];
           const ahora = new Date();
-          const matchTime = new Date(p.fecha + 'T' + p.hora + ':00');
-          const cerrado = (matchTime - ahora) < 0;
+          // hora almacenada en hora Paraguay (UTC-3 fijo, Ley 7354/2024)
+          const matchTime = new Date(`${p.fecha}T${p.hora}:00-03:00`);
+          const cerrado = ahora >= matchTime;
         %>
         <div class="partido-row border-bottom px-3 py-3">
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">

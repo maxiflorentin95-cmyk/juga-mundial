@@ -66,6 +66,22 @@ async function start() {
     app.listen(PORT, () => {
       console.log(`⚽ JUGA Mundial 2026 en http://localhost:${PORT}`);
     });
+
+    // Auto-sync con API-Football cada 5 minutos (solo si la key está configurada)
+    if (process.env.API_FOOTBALL_KEY) {
+      const { sync } = require('./scripts/sync-api-football');
+      const SYNC_INTERVAL = 5 * 60 * 1000;
+      setTimeout(async function autoSync() {
+        try {
+          const r = await sync();
+          if (r.actualizados > 0) console.log(`[auto-sync] ${r.actualizados} partidos actualizados`);
+        } catch (e) {
+          console.error('[auto-sync] Error:', e.message);
+        }
+        setTimeout(autoSync, SYNC_INTERVAL);
+      }, SYNC_INTERVAL);
+      console.log('🔄 Auto-sync API-Football activo (cada 5 min)');
+    }
   } catch (err) {
     console.error('❌ Error al iniciar:', err);
     process.exit(1);

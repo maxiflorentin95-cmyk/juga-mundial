@@ -2,11 +2,10 @@ const router = require('express').Router();
 const { prepare } = require('../db');
 const { requireLogin } = require('../middleware/auth');
 
-const CIERRE_MINUTOS = 0;
-
+// Paraguay UTC-3 fijo (Ley 7354/2024 – sin horario de verano)
 function estaCerrado(fecha, hora) {
-  const matchTime = new Date(`${fecha}T${hora}:00`);
-  return (matchTime - new Date()) < CIERRE_MINUTOS * 60 * 1000;
+  const matchTime = new Date(`${fecha}T${hora}:00-03:00`);
+  return new Date() >= matchTime;
 }
 
 router.get('/', requireLogin, async (req, res) => {

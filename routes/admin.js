@@ -101,6 +101,16 @@ router.post('/resultado', requireAdmin, async (req, res) => {
   }
 });
 
+router.post('/sync', requireAdmin, async (req, res) => {
+  try {
+    const { sync } = require('../scripts/sync-api-football');
+    const result = await sync();
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
 router.post('/resetear-passwords', requireAdmin, async (req, res) => {
   try {
     const usuarios = await prepare('SELECT id, username FROM usuarios').all();
