@@ -94,6 +94,15 @@ async function initSchema() {
       updated_at TIMESTAMP DEFAULT NOW(),
       UNIQUE(usuario_id, partido_id)
     );
+    CREATE TABLE IF NOT EXISTS pronosticos_especiales (
+      id SERIAL PRIMARY KEY,
+      usuario_id INTEGER REFERENCES usuarios(id),
+      tipo TEXT NOT NULL,
+      valor TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(usuario_id, tipo)
+    );
   `);
 }
 

@@ -36,6 +36,7 @@ app.use('/ranking', require('./routes/ranking'));
 app.use('/admin', require('./routes/admin'));
 app.use('/hoy', require('./routes/hoy'));
 app.use('/historial', require('./routes/historial'));
+app.use('/especiales', require('./routes/especiales'));
 
 // Health check – muestra estado de DB
 app.get('/health', async (req, res) => {

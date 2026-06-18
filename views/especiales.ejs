@@ -1,0 +1,267 @@
+<%- include('partials/header') %>
+
+<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+  <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i> Volver
+  </a>
+  <div>
+    <h2 class="fw-bold mb-0"><i class="bi bi-stars text-warning me-2"></i>Pronósticos Especiales</h2>
+    <div class="text-muted small">Campeón y Goleador del Mundial 2026</div>
+  </div>
+</div>
+
+<!-- Banner de estado -->
+<% if (cerrado) { %>
+<div class="alert alert-secondary d-flex align-items-center gap-2 mb-4">
+  <i class="bi bi-lock-fill fs-5"></i>
+  <div>
+    <strong>Plazo cerrado.</strong>
+    Los pronósticos especiales cerraron el 18 de junio a las 23:59 hs (Paraguay).
+    <% if (distribucion) { %>A continuación podés ver cómo votó el grupo.<% } %>
+  </div>
+</div>
+<% } else { %>
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+  <i class="bi bi-clock-fill fs-5"></i>
+  <div>
+    <strong>¡Último momento!</strong>
+    Cierre hoy <strong>18 de junio a las 23:59 hs</strong> (hora Paraguay).
+    Podés cambiar tu pronóstico hasta ese momento.
+  </div>
+</div>
+<% } %>
+
+<div class="row g-4">
+
+  <!-- ── CAMPEÓN ── -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-warning text-dark fw-bold py-2">
+        <i class="bi bi-trophy-fill me-2"></i>¿Quién será el Campeón?
+      </div>
+      <div class="card-body">
+
+        <% if (!cerrado) { %>
+        <p class="text-muted small mb-3">Seleccioná el equipo que creés que ganará el Mundial 2026.</p>
+
+        <!-- Selección actual -->
+        <% if (miosMap.campeon) { %>
+        <div class="mb-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex align-items-center gap-2">
+          <i class="bi bi-check-circle-fill text-success"></i>
+          <span class="fw-semibold">Tu elección: <strong><%= miosMap.campeon %></strong></span>
+        </div>
+        <% } %>
+
+        <!-- Dropdown de equipos agrupado por grupo -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Seleccioná el campeón:</label>
+          <select id="sel-campeon" class="form-select">
+            <option value="">— Elegí un equipo —</option>
+            <%
+              const gruposUnicos = [...new Set(equipos.map(e => e.grupo))].sort();
+            %>
+            <% gruposUnicos.forEach(g => { %>
+            <optgroup label="Grupo <%= g %>">
+              <% equipos.filter(e => e.grupo === g).forEach(e => { %>
+              <option value="<%= e.nombre %>" <%= miosMap.campeon === e.nombre ? 'selected' : '' %>>
+                <%= e.bandera %> <%= e.nombre %>
+              </option>
+              <% }) %>
+            </optgroup>
+            <% }) %>
+          </select>
+        </div>
+        <button class="btn btn-warning btn-guardar-especial w-100" data-tipo="campeon" data-sel="sel-campeon">
+          <i class="bi bi-save me-1"></i><%= miosMap.campeon ? 'Actualizar' : 'Guardar' %>
+        </button>
+        <div class="msg-especial-campeon small text-center mt-2"></div>
+
+        <% } else { %>
+        <!-- Cerrado: mostrar mi elección -->
+        <% if (miosMap.campeon) { %>
+        <div class="p-3 rounded bg-warning bg-opacity-10 border border-warning text-center mb-3">
+          <div class="text-muted small mb-1">Tu pronóstico</div>
+          <div class="fw-bold fs-5">
+            <% const eqCampeon = equipos.find(e => e.nombre === miosMap.campeon); %>
+            <%= eqCampeon ? eqCampeon.bandera : '' %> <%= miosMap.campeon %>
+          </div>
+        </div>
+        <% } else { %>
+        <div class="text-muted small fst-italic">No cargaste pronóstico de campeón</div>
+        <% } %>
+        <% } %>
+
+        <!-- Distribución (solo si cerrado y hay datos) -->
+        <% if (cerrado && distribucion && distribucion.campeon.length > 0) { %>
+        <hr class="my-3">
+        <div class="small fw-semibold text-muted mb-2">¿Cómo votó el grupo?</div>
+        <% const totalV = distribucion.campeon.reduce((a,x) => a + parseInt(x.votos), 0); %>
+        <% distribucion.campeon.forEach(row => { %>
+        <% const pct = Math.round(parseInt(row.votos) * 100 / totalV); %>
+        <% const eq = equipos.find(e => e.nombre === row.valor); %>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="text-nowrap" style="min-width:130px;font-size:.85rem">
+            <%= eq ? eq.bandera : '' %> <%= row.valor %>
+          </span>
+          <div class="progress flex-grow-1 rounded-pill" style="height:14px">
+            <div class="progress-bar bg-warning" style="width:<%= pct %>%"></div>
+          </div>
+          <span class="text-muted small text-nowrap"><%= row.votos %> (<%= pct %>%)</span>
+        </div>
+        <% }) %>
+        <% } %>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GOLEADOR ── -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-danger text-white fw-bold py-2">
+        <i class="bi bi-lightning-charge-fill me-2"></i>¿Quién será el Goleador?
+      </div>
+      <div class="card-body">
+
+        <% if (!cerrado) { %>
+        <p class="text-muted small mb-3">Escribí el nombre del jugador que creés que será el máximo goleador del torneo.</p>
+
+        <!-- Selección actual -->
+        <% if (miosMap.goleador) { %>
+        <div class="mb-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex align-items-center gap-2">
+          <i class="bi bi-check-circle-fill text-success"></i>
+          <span class="fw-semibold">Tu elección: <strong><%= miosMap.goleador %></strong></span>
+        </div>
+        <% } %>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Nombre del goleador:</label>
+          <input type="text" id="inp-goleador" class="form-control"
+            value="<%= miosMap.goleador || '' %>"
+            placeholder="Ej: Lionel Messi"
+            maxlength="100" autocomplete="off">
+          <div class="form-text">Escribí nombre y apellido del jugador.</div>
+        </div>
+
+        <!-- Sugerencias rápidas -->
+        <div class="mb-3">
+          <div class="small text-muted mb-1">Sugerencias rápidas:</div>
+          <div class="d-flex flex-wrap gap-1">
+            <% ['Lionel Messi','Kylian Mbappé','Erling Haaland','Vinicius Jr.','Harry Kane','Lautaro Martínez','Neymar Jr.','Cristiano Ronaldo'].forEach(j => { %>
+            <button type="button" class="btn btn-outline-secondary btn-sm btn-sugerencia" data-nombre="<%= j %>">
+              <%= j %>
+            </button>
+            <% }) %>
+          </div>
+        </div>
+
+        <button class="btn btn-danger btn-guardar-especial w-100" data-tipo="goleador" data-inp="inp-goleador">
+          <i class="bi bi-save me-1"></i><%= miosMap.goleador ? 'Actualizar' : 'Guardar' %>
+        </button>
+        <div class="msg-especial-goleador small text-center mt-2"></div>
+
+        <% } else { %>
+        <!-- Cerrado: mostrar mi elección -->
+        <% if (miosMap.goleador) { %>
+        <div class="p-3 rounded bg-danger bg-opacity-10 border border-danger text-center mb-3">
+          <div class="text-muted small mb-1">Tu pronóstico</div>
+          <div class="fw-bold fs-5"><i class="bi bi-lightning-charge-fill text-danger me-1"></i><%= miosMap.goleador %></div>
+        </div>
+        <% } else { %>
+        <div class="text-muted small fst-italic">No cargaste pronóstico de goleador</div>
+        <% } %>
+        <% } %>
+
+        <!-- Distribución (solo si cerrado y hay datos) -->
+        <% if (cerrado && distribucion && distribucion.goleador.length > 0) { %>
+        <hr class="my-3">
+        <div class="small fw-semibold text-muted mb-2">¿Cómo votó el grupo?</div>
+        <% const totalG = distribucion.goleador.reduce((a,x) => a + parseInt(x.votos), 0); %>
+        <% distribucion.goleador.forEach(row => { %>
+        <% const pctG = Math.round(parseInt(row.votos) * 100 / totalG); %>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="text-nowrap" style="min-width:130px;font-size:.85rem"><%= row.valor %></span>
+          <div class="progress flex-grow-1 rounded-pill" style="height:14px">
+            <div class="progress-bar bg-danger" style="width:<%= pctG %>%"></div>
+          </div>
+          <span class="text-muted small text-nowrap"><%= row.votos %> (<%= pctG %>%)</span>
+        </div>
+        <% }) %>
+        <% } %>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<% if (!cerrado) { %>
+<script>
+// Sugerencias goleador
+document.querySelectorAll('.btn-sugerencia').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.getElementById('inp-goleador').value = this.dataset.nombre;
+  });
+});
+
+// Guardar especiales
+document.querySelectorAll('.btn-guardar-especial').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const tipo = this.dataset.tipo;
+    const valor = this.dataset.sel
+      ? document.getElementById(this.dataset.sel).value
+      : document.getElementById(this.dataset.inp).value;
+    const msgEl = document.querySelector('.msg-especial-' + tipo);
+
+    if (!valor) {
+      msgEl.textContent = tipo === 'campeon' ? 'Elegí un equipo' : 'Escribí un nombre';
+      msgEl.className = 'msg-especial-' + tipo + ' small text-center mt-2 text-danger';
+      return;
+    }
+
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+
+    try {
+      const res = await fetch('/especiales/guardar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, valor })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        // Actualizar badge de "tu elección"
+        const card = this.closest('.card-body');
+        let badge = card.querySelector('.badge-eleccion');
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.className = 'badge-eleccion mb-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex align-items-center gap-2';
+          badge.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i><span class="fw-semibold">Tu elección: <strong class="val-eleccion"></strong></span>';
+          this.before(badge);
+        }
+        badge.querySelector('.val-eleccion').textContent = data.valor;
+
+        msgEl.textContent = '✓ Guardado';
+        msgEl.className = 'msg-especial-' + tipo + ' small text-center mt-2 text-success';
+        setTimeout(() => { msgEl.textContent = ''; }, 2500);
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-save me-1"></i>Actualizar';
+      } else {
+        msgEl.textContent = data.msg;
+        msgEl.className = 'msg-especial-' + tipo + ' small text-center mt-2 text-danger';
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-save me-1"></i>Guardar';
+      }
+    } catch(e) {
+      msgEl.textContent = 'Error de red';
+      msgEl.className = 'msg-especial-' + tipo + ' small text-center mt-2 text-danger';
+      this.disabled = false;
+      this.innerHTML = '<i class="bi bi-save me-1"></i>Guardar';
+    }
+  });
+});
+</script>
+<% } %>
+
+<%- include('partials/footer') %>

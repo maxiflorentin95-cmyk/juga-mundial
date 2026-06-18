@@ -47,6 +47,9 @@
       <a class="nav-link text-light <%= title==='Mis Pronósticos' ? 'fw-bold' : '' %>" href="/pronosticos">
         <i class="bi bi-pencil-square"></i> Pronósticos
       </a>
+      <a class="nav-link text-warning <%= title==='Pronósticos Especiales' ? 'fw-bold' : '' %>" href="/especiales">
+        <i class="bi bi-stars"></i> Especiales
+      </a>
       <a class="nav-link text-light <%= title==='Ranking' ? 'fw-bold' : '' %>" href="/ranking">
         <i class="bi bi-trophy-fill"></i> Ranking
       </a>
@@ -78,9 +81,9 @@
     <i class="bi bi-calendar-day-fill"></i>
     <span>Hoy</span>
   </a>
-  <a href="/historial" class="<%= title==='Historial de Partidos' ? 'active' : '' %>">
-    <i class="bi bi-clock-history"></i>
-    <span>Historial</span>
+  <a href="/especiales" class="<%= title==='Pronósticos Especiales' ? 'active' : '' %>">
+    <i class="bi bi-stars"></i>
+    <span>Especiales</span>
   </a>
   <a href="/pronosticos" class="<%= title==='Mis Pronósticos' ? 'active' : '' %>">
     <i class="bi bi-pencil-square"></i>
