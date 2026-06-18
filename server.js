@@ -75,7 +75,7 @@ async function start() {
     });
 
     // Auto-sync con API-Football cada 5 minutos (solo si la key está configurada)
-    if (process.env.API_FOOTBALL_KEY) {
+    if (process.env.FOOTBALL_DATA_KEY) {
       const { sync } = require('./scripts/sync-api-football');
       const SYNC_INTERVAL = 5 * 60 * 1000;
       setTimeout(async function autoSync() {

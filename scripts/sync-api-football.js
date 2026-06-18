@@ -1,24 +1,19 @@
 /**
- * Sincronización con API-Football v3
- * - Convierte fixture.date (UTC) a hora Paraguay (UTC-3 fijo, Ley 7354/2024)
+ * Sincronización con football-data.org v4
+ * - Convierte utcDate a hora Paraguay (UTC-3 fijo, Ley 7354/2024)
  * - Actualiza fecha/hora de partidos pendientes
- * - Calcula resultados y puntos cuando status === 'FT'
+ * - Calcula resultados y puntos cuando status === 'FINISHED'
  *
- * Variables de entorno requeridas:
- *   API_FOOTBALL_KEY   – clave de api-sports.io
- * Opcionales:
- *   API_FOOTBALL_LEAGUE  – league_id (default 1 = FIFA World Cup)
- *   API_FOOTBALL_SEASON  – season    (default 2026)
+ * Variable de entorno requerida:
+ *   FOOTBALL_DATA_KEY  – token de football-data.org (gratis en football-data.org/client/register)
  */
 
 const { prepare, pool } = require('../db');
 
-const API_KEY    = process.env.API_FOOTBALL_KEY;
-const LEAGUE_ID  = process.env.API_FOOTBALL_LEAGUE  || '1';
-const SEASON     = process.env.API_FOOTBALL_SEASON  || '2026';
-const API_BASE   = 'https://v3.football.api-sports.io';
+const API_KEY  = process.env.FOOTBALL_DATA_KEY;
+const API_BASE = 'https://api.football-data.org/v4';
 
-// Paraguay se mantiene en UTC-3 permanente (Ley 7354/2024 – sin horario de verano)
+// Paraguay se mantiene en UTC-3 permanente (Ley 7354/2024)
 const PY_OFFSET_MS = -3 * 60 * 60 * 1000;
 
 function toParaguayTime(utcIso) {
@@ -29,7 +24,7 @@ function toParaguayTime(utcIso) {
   };
 }
 
-// Mapeo nombres API-Football (inglés) → nombres en nuestra DB (español)
+// Mapeo nombres football-data.org (inglés) → nombres en nuestra DB (español)
 const TEAM_MAP = {
   'Mexico':                         'México',
   'South Korea':                    'Corea del Sur',
@@ -40,25 +35,23 @@ const TEAM_MAP = {
   'Canada':                         'Canadá',
   'Switzerland':                    'Suiza',
   'Qatar':                          'Catar',
-  'Bosnia':                         'Bosnia-Herzegovina',
   'Bosnia and Herzegovina':         'Bosnia-Herzegovina',
+  'Bosnia':                         'Bosnia-Herzegovina',
   'Brazil':                         'Brasil',
   'Morocco':                        'Marruecos',
   'Haiti':                          'Haití',
   'Scotland':                       'Escocia',
   'United States':                  'Estados Unidos',
   'USA':                            'Estados Unidos',
-  'Paraguay':                       'Paraguay',
   'Australia':                      'Australia',
   'Turkey':                         'Turquía',
-  'Turkiye':                        'Turquía',
+  'Türkiye':                        'Turquía',
   'Germany':                        'Alemania',
   'Curaçao':                        'Curazao',
   'Curacao':                        'Curazao',
-  "Cote d'Ivoire":                  'Costa de Marfil',
   "Côte d'Ivoire":                  'Costa de Marfil',
+  "Cote d'Ivoire":                  'Costa de Marfil',
   'Ivory Coast':                    'Costa de Marfil',
-  'Ecuador':                        'Ecuador',
   'Netherlands':                    'Países Bajos',
   'Japan':                          'Japón',
   'Sweden':                         'Suecia',
@@ -70,63 +63,61 @@ const TEAM_MAP = {
   'Spain':                          'España',
   'Cape Verde':                     'Cabo Verde',
   'Saudi Arabia':                   'Arabia Saudita',
-  'Uruguay':                        'Uruguay',
   'France':                         'Francia',
-  'Senegal':                        'Senegal',
   'Iraq':                           'Irak',
   'Norway':                         'Noruega',
-  'Argentina':                      'Argentina',
   'Algeria':                        'Argelia',
-  'Austria':                        'Austria',
   'Jordan':                         'Jordania',
-  'Portugal':                       'Portugal',
   'DR Congo':                       'Rep. Dem. Congo',
-  'Congo DR':                       'Rep. Dem. Congo',
   'Democratic Republic of Congo':   'Rep. Dem. Congo',
-  'Congo':                          'Rep. Dem. Congo',
   'Uzbekistan':                     'Uzbekistán',
-  'Colombia':                       'Colombia',
   'England':                        'Inglaterra',
   'Croatia':                        'Croacia',
-  'Ghana':                          'Ghana',
   'Panama':                         'Panamá',
+  'Ghana':                          'Ghana',
 };
 
 const mapTeam = (n) => TEAM_MAP[n] || n;
 
 function calcularPuntos(pL, pV, rL, rV) {
-  if (pL === rL && pV === rV)                             return 5;
-  if ((pL - pV) === (rL - rV))                           return 3;
-  if (Math.sign(pL - pV) === Math.sign(rL - rV))         return 2;
+  if (pL === rL && pV === rV)                         return 5;
+  if ((pL - pV) === (rL - rV))                       return 3;
+  if (Math.sign(pL - pV) === Math.sign(rL - rV))     return 2;
   return 0;
 }
 
-async function fetchFixtures() {
-  const url = `${API_BASE}/fixtures?league=${LEAGUE_ID}&season=${SEASON}`;
-  const resp = await fetch(url, { headers: { 'x-apisports-key': API_KEY } });
-  if (!resp.ok) throw new Error(`API-Football HTTP ${resp.status}`);
-  const json = await resp.json();
-  if (json.errors && Object.keys(json.errors).length) {
-    const errMsg = JSON.stringify(json.errors);
-    // Plan gratuito no soporta temporada 2026
-    if (errMsg.includes('Free plans') || errMsg.includes('do not have access')) {
-      const e = new Error(errMsg);
-      e.planError = true;
-      throw e;
-    }
-    throw new Error(`API-Football errores: ${errMsg}`);
+async function fetchMatches() {
+  const url = `${API_BASE}/competitions/WC/matches?season=2026`;
+  const resp = await fetch(url, {
+    headers: { 'X-Auth-Token': API_KEY }
+  });
+
+  if (resp.status === 403) {
+    const e = new Error('Token inválido o sin acceso al Mundial 2026. Verificá tu token de football-data.org.');
+    e.authError = true;
+    throw e;
   }
-  return json.response; // array de fixtures
+  if (resp.status === 429) {
+    throw new Error('Límite de requests alcanzado (free tier: 10 req/min). Intentá en un momento.');
+  }
+  if (!resp.ok) {
+    throw new Error(`football-data.org HTTP ${resp.status}`);
+  }
+
+  const json = await resp.json();
+  if (!json.matches) {
+    throw new Error(`Respuesta inesperada: ${JSON.stringify(json).slice(0, 200)}`);
+  }
+  return json.matches;
 }
 
 async function sync() {
-  if (!API_KEY) throw new Error('Falta la variable de entorno API_FOOTBALL_KEY');
+  if (!API_KEY) throw new Error('Falta la variable de entorno FOOTBALL_DATA_KEY');
 
-  console.log(`[sync] Consultando liga=${LEAGUE_ID} temporada=${SEASON}...`);
-  const fixtures = await fetchFixtures();
-  console.log(`[sync] ${fixtures.length} fixtures recibidos`);
+  console.log('[sync] Consultando football-data.org WC 2026...');
+  const matches = await fetchMatches();
+  console.log(`[sync] ${matches.length} partidos recibidos`);
 
-  // Traer todos los partidos de nuestra DB con nombres de equipo
   const dbPartidos = await prepare(`
     SELECT p.id, p.estado, p.goles_local, p.goles_visitante, p.fecha, p.hora,
            el.nombre AS local_nombre, ev.nombre AS visit_nombre
@@ -135,7 +126,6 @@ async function sync() {
     JOIN equipos ev ON p.equipo_visitante_id = ev.id
   `).all();
 
-  // Índice rápido "local|visitante" → fila
   const dbIdx = {};
   for (const p of dbPartidos) {
     dbIdx[`${p.local_nombre}|${p.visit_nombre}`] = p;
@@ -144,29 +134,37 @@ async function sync() {
   const client = await pool.connect();
   let actualizados = 0;
   const errores = [];
+  const sinMapeo = [];
 
   try {
-    for (const f of fixtures) {
-      const apiLocal = mapTeam(f.teams.home.name);
-      const apiVisit = mapTeam(f.teams.away.name);
+    for (const m of matches) {
+      const apiLocal = mapTeam(m.homeTeam.name);
+      const apiVisit = mapTeam(m.awayTeam.name);
       const dbP = dbIdx[`${apiLocal}|${apiVisit}`];
-      if (!dbP) continue; // partido fuera de fase de grupos o sin mapeo
 
-      const status   = f.fixture.status.short; // 'NS','1H','HT','2H','FT',...
-      const pyTime   = toParaguayTime(f.fixture.date);
+      if (!dbP) {
+        // Solo loguear en desarrollo para detectar mapeos faltantes
+        if (process.env.NODE_ENV !== 'production') {
+          sinMapeo.push(`${m.homeTeam.name} vs ${m.awayTeam.name}`);
+        }
+        continue;
+      }
 
-      // Actualizar fecha/hora si el partido sigue pendiente
+      const status  = m.status; // SCHEDULED, TIMED, IN_PLAY, PAUSED, FINISHED
+      const pyTime  = toParaguayTime(m.utcDate);
+
+      // Actualizar fecha/hora si cambió y el partido sigue pendiente
       if (dbP.estado === 'pendiente' &&
           (dbP.fecha !== pyTime.fecha || dbP.hora !== pyTime.hora)) {
         await prepare('UPDATE partidos SET fecha=$1, hora=$2 WHERE id=$3')
           .run(pyTime.fecha, pyTime.hora, dbP.id);
       }
 
-      // Actualizar resultado solo al terminar el partido (FT)
-      if (status === 'FT' && dbP.estado !== 'finalizado') {
-        const gl = f.goals.home;
-        const gv = f.goals.away;
-        if (gl === null || gv === null) continue;
+      // Actualizar resultado solo cuando el partido termina
+      if (status === 'FINISHED' && dbP.estado !== 'finalizado') {
+        const gl = m.score?.fullTime?.home;
+        const gv = m.score?.fullTime?.away;
+        if (gl === null || gv === null || gl === undefined || gv === undefined) continue;
 
         try {
           await client.query('BEGIN');
@@ -188,7 +186,7 @@ async function sync() {
             [gl, gv, dbP.id]
           );
 
-          // Recalcular y asignar puntos
+          // Recalcular puntos por pronóstico
           for (const pr of prons) {
             const pts = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
             await client.query(
@@ -202,11 +200,12 @@ async function sync() {
           }
 
           await client.query('COMMIT');
-          console.log(`[sync] ✓ ${apiLocal} ${gl}-${gv} ${apiVisit} (${prons.length} pronósticos)`);
+          console.log(`[sync] ✓ ${apiLocal} ${gl}-${gv} ${apiVisit} (${prons.length} pronósticos actualizados)`);
           actualizados++;
         } catch (e) {
           await client.query('ROLLBACK');
           errores.push(`${apiLocal} vs ${apiVisit}: ${e.message}`);
+          console.error(`[sync] ✗ Error en ${apiLocal} vs ${apiVisit}:`, e.message);
         }
       }
     }
@@ -214,6 +213,7 @@ async function sync() {
     client.release();
   }
 
+  if (sinMapeo.length) console.log(`[sync] Sin mapeo (${sinMapeo.length}):`, sinMapeo.join(', '));
   console.log(`[sync] Completado: ${actualizados} partidos actualizados, ${errores.length} errores`);
   return { actualizados, errores };
 }
