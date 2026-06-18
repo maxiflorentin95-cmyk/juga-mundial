@@ -101,6 +101,116 @@ router.post('/resultado', requireAdmin, async (req, res) => {
   }
 });
 
+// Horarios correctos en hora Paraguay (UTC-3 fijo, Ley 7354/2024)
+// Regla: ciudades MX (CDM/GDL/MTY) = seed CDT +2h; resto USA/Canadá = seed ET +1h
+router.post('/corregir-horarios', requireAdmin, async (req, res) => {
+  const horariosPY = [
+    // GRUPO A
+    { local:'México',              visit:'Sudáfrica',          fecha:'2026-06-11', hora:'16:00' },
+    { local:'Corea del Sur',       visit:'Chequia',            fecha:'2026-06-11', hora:'23:00' },
+    { local:'Chequia',             visit:'Sudáfrica',          fecha:'2026-06-18', hora:'13:00' },
+    { local:'México',              visit:'Corea del Sur',      fecha:'2026-06-18', hora:'22:00' },
+    { local:'Chequia',             visit:'México',             fecha:'2026-06-24', hora:'22:00' },
+    { local:'Sudáfrica',           visit:'Corea del Sur',      fecha:'2026-06-24', hora:'22:00' },
+    // GRUPO B
+    { local:'Canadá',              visit:'Bosnia-Herzegovina', fecha:'2026-06-12', hora:'16:00' },
+    { local:'Suiza',               visit:'Catar',              fecha:'2026-06-13', hora:'19:00' },
+    { local:'Suiza',               visit:'Bosnia-Herzegovina', fecha:'2026-06-18', hora:'16:00' },
+    { local:'Canadá',              visit:'Catar',              fecha:'2026-06-18', hora:'19:00' },
+    { local:'Suiza',               visit:'Canadá',             fecha:'2026-06-24', hora:'16:00' },
+    { local:'Bosnia-Herzegovina',  visit:'Catar',              fecha:'2026-06-24', hora:'16:00' },
+    // GRUPO C
+    { local:'Brasil',              visit:'Marruecos',          fecha:'2026-06-13', hora:'19:00' },
+    { local:'Haití',               visit:'Escocia',            fecha:'2026-06-13', hora:'22:00' },
+    { local:'Escocia',             visit:'Marruecos',          fecha:'2026-06-19', hora:'19:00' },
+    { local:'Brasil',              visit:'Haití',              fecha:'2026-06-19', hora:'21:30' },
+    { local:'Escocia',             visit:'Brasil',             fecha:'2026-06-24', hora:'19:00' },
+    { local:'Marruecos',           visit:'Haití',              fecha:'2026-06-24', hora:'19:00' },
+    // GRUPO D
+    { local:'Estados Unidos',      visit:'Paraguay',           fecha:'2026-06-12', hora:'22:00' },
+    { local:'Australia',           visit:'Turquía',            fecha:'2026-06-13', hora:'22:00' },
+    { local:'Estados Unidos',      visit:'Australia',          fecha:'2026-06-19', hora:'16:00' },
+    { local:'Turquía',             visit:'Paraguay',           fecha:'2026-06-19', hora:'22:00' },
+    { local:'Turquía',             visit:'Estados Unidos',     fecha:'2026-06-25', hora:'23:00' },
+    { local:'Paraguay',            visit:'Australia',          fecha:'2026-06-25', hora:'23:00' },
+    // GRUPO E
+    { local:'Alemania',            visit:'Curazao',            fecha:'2026-06-14', hora:'14:00' },
+    { local:'Costa de Marfil',     visit:'Ecuador',            fecha:'2026-06-14', hora:'20:00' },
+    { local:'Alemania',            visit:'Costa de Marfil',    fecha:'2026-06-20', hora:'17:00' },
+    { local:'Ecuador',             visit:'Curazao',            fecha:'2026-06-20', hora:'21:00' },
+    { local:'Ecuador',             visit:'Alemania',           fecha:'2026-06-25', hora:'17:00' },
+    { local:'Curazao',             visit:'Costa de Marfil',    fecha:'2026-06-25', hora:'17:00' },
+    // GRUPO F
+    { local:'Países Bajos',        visit:'Japón',              fecha:'2026-06-14', hora:'17:00' },
+    { local:'Suecia',              visit:'Túnez',              fecha:'2026-06-14', hora:'23:00' },
+    { local:'Países Bajos',        visit:'Suecia',             fecha:'2026-06-20', hora:'14:00' },
+    { local:'Túnez',               visit:'Japón',              fecha:'2026-06-21', hora:'01:00' }, // cruza medianoche
+    { local:'Japón',               visit:'Suecia',             fecha:'2026-06-25', hora:'20:00' },
+    { local:'Túnez',               visit:'Países Bajos',       fecha:'2026-06-25', hora:'20:00' },
+    // GRUPO G
+    { local:'Bélgica',             visit:'Egipto',             fecha:'2026-06-15', hora:'16:00' },
+    { local:'Irán',                visit:'Nueva Zelanda',      fecha:'2026-06-15', hora:'22:00' },
+    { local:'Bélgica',             visit:'Irán',               fecha:'2026-06-21', hora:'16:00' },
+    { local:'Nueva Zelanda',       visit:'Egipto',             fecha:'2026-06-21', hora:'22:00' },
+    { local:'Egipto',              visit:'Irán',               fecha:'2026-06-26', hora:'21:00' },
+    { local:'Nueva Zelanda',       visit:'Bélgica',            fecha:'2026-06-26', hora:'21:00' },
+    // GRUPO H
+    { local:'España',              visit:'Cabo Verde',         fecha:'2026-06-15', hora:'13:00' },
+    { local:'Arabia Saudita',      visit:'Uruguay',            fecha:'2026-06-15', hora:'19:00' },
+    { local:'España',              visit:'Arabia Saudita',     fecha:'2026-06-21', hora:'13:00' },
+    { local:'Uruguay',             visit:'Cabo Verde',         fecha:'2026-06-21', hora:'19:00' },
+    { local:'Cabo Verde',          visit:'Arabia Saudita',     fecha:'2026-06-26', hora:'20:00' },
+    { local:'Uruguay',             visit:'España',             fecha:'2026-06-26', hora:'21:00' },
+    // GRUPO I
+    { local:'Francia',             visit:'Senegal',            fecha:'2026-06-16', hora:'16:00' },
+    { local:'Irak',                visit:'Noruega',            fecha:'2026-06-16', hora:'19:00' },
+    { local:'Francia',             visit:'Irak',               fecha:'2026-06-22', hora:'18:00' },
+    { local:'Noruega',             visit:'Senegal',            fecha:'2026-06-22', hora:'21:00' },
+    { local:'Noruega',             visit:'Francia',            fecha:'2026-06-26', hora:'16:00' },
+    { local:'Senegal',             visit:'Irak',               fecha:'2026-06-26', hora:'16:00' },
+    // GRUPO J
+    { local:'Argentina',           visit:'Argelia',            fecha:'2026-06-16', hora:'21:00' },
+    { local:'Austria',             visit:'Jordania',           fecha:'2026-06-16', hora:'22:00' },
+    { local:'Argentina',           visit:'Austria',            fecha:'2026-06-22', hora:'14:00' },
+    { local:'Jordania',            visit:'Argelia',            fecha:'2026-06-22', hora:'22:00' },
+    { local:'Argelia',             visit:'Austria',            fecha:'2026-06-27', hora:'22:00' },
+    { local:'Jordania',            visit:'Argentina',          fecha:'2026-06-27', hora:'22:00' },
+    // GRUPO K
+    { local:'Portugal',            visit:'Rep. Dem. Congo',    fecha:'2026-06-17', hora:'14:00' },
+    { local:'Uzbekistán',          visit:'Colombia',           fecha:'2026-06-17', hora:'23:00' }, // confirmado por usuario
+    { local:'Portugal',            visit:'Uzbekistán',         fecha:'2026-06-23', hora:'14:00' },
+    { local:'Colombia',            visit:'Rep. Dem. Congo',    fecha:'2026-06-23', hora:'22:00' },
+    { local:'Colombia',            visit:'Portugal',           fecha:'2026-06-27', hora:'20:30' },
+    { local:'Rep. Dem. Congo',     visit:'Uzbekistán',         fecha:'2026-06-27', hora:'20:30' },
+    // GRUPO L
+    { local:'Inglaterra',          visit:'Croacia',            fecha:'2026-06-17', hora:'17:00' },
+    { local:'Ghana',               visit:'Panamá',             fecha:'2026-06-17', hora:'20:00' },
+    { local:'Inglaterra',          visit:'Ghana',              fecha:'2026-06-23', hora:'17:00' },
+    { local:'Panamá',              visit:'Croacia',            fecha:'2026-06-23', hora:'20:00' },
+    { local:'Panamá',              visit:'Inglaterra',         fecha:'2026-06-27', hora:'18:00' },
+    { local:'Croacia',             visit:'Ghana',              fecha:'2026-06-27', hora:'18:00' },
+  ];
+
+  try {
+    let actualizados = 0, noEncontrados = [];
+    for (const h of horariosPY) {
+      const row = await prepare(`
+        SELECT p.id FROM partidos p
+        JOIN equipos el ON p.equipo_local_id = el.id
+        JOIN equipos ev ON p.equipo_visitante_id = ev.id
+        WHERE el.nombre=$1 AND ev.nombre=$2
+      `).get(h.local, h.visit);
+      if (!row) { noEncontrados.push(`${h.local} vs ${h.visit}`); continue; }
+      await prepare('UPDATE partidos SET fecha=$1, hora=$2 WHERE id=$3')
+        .run(h.fecha, h.hora, row.id);
+      actualizados++;
+    }
+    res.json({ ok: true, actualizados, noEncontrados });
+  } catch (e) {
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
 router.post('/sync', requireAdmin, async (req, res) => {
   try {
     const { sync } = require('../scripts/sync-api-football');

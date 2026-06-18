@@ -61,6 +61,25 @@
     </div>
   </div>
 
+  <!-- Corrección de horarios -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-warning text-dark fw-bold">
+        <i class="bi bi-clock-history me-2"></i>Corregir Horarios (Paraguay)
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Actualiza los 72 partidos a hora Paraguay (UTC-3 fijo).<br>
+          Usá esto si los horarios se ven mal. Solo necesita ejecutarse una vez.
+        </p>
+        <button id="btnHorarios" class="btn btn-warning">
+          <i class="bi bi-clock me-2"></i>Corregir horarios ahora
+        </button>
+        <div id="horariosMsg" class="mt-3 small"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Sincronización API-Football -->
   <div class="col-12 col-md-6">
     <div class="card border-0 shadow-sm">
@@ -97,6 +116,24 @@
 </div>
 
 <script>
+document.getElementById('btnHorarios').addEventListener('click', async function() {
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Corrigiendo...';
+  const msg = document.getElementById('horariosMsg');
+  try {
+    const r = await fetch('/admin/corregir-horarios', { method: 'POST' }).then(x => x.json());
+    if (r.ok) {
+      msg.innerHTML = `<div class="alert alert-success py-2">✓ ${r.actualizados} partidos corregidos${r.noEncontrados.length ? '<br>No encontrados: ' + r.noEncontrados.join(', ') : ''}</div>`;
+    } else {
+      msg.innerHTML = `<div class="alert alert-danger py-2">${r.msg}</div>`;
+    }
+  } catch(e) {
+    msg.innerHTML = `<div class="alert alert-danger py-2">Error de red</div>`;
+  }
+  this.disabled = false;
+  this.innerHTML = '<i class="bi bi-clock me-2"></i>Corregir horarios ahora';
+});
+
 document.getElementById('btnSync').addEventListener('click', async function() {
   this.disabled = true;
   this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sincronizando...';
