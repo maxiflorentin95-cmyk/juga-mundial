@@ -6,7 +6,7 @@ const { requireLogin } = require('../middleware/auth');
 const CIERRE = new Date('2026-06-18T23:59:00-03:00');
 
 const TIPOS_EQUIPO = ['campeon', 'segundo', 'tercero'];
-const TIPOS_VALIDOS = [...TIPOS_EQUIPO, 'goleador'];
+const TIPOS_VALIDOS = [...TIPOS_EQUIPO, 'goleador', 'mvp'];
 
 function estaCerrado() {
   return new Date() >= CIERRE;

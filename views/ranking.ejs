@@ -21,7 +21,7 @@
   <div class="col-12 col-sm-4 col-md-3 order-1 order-sm-2">
     <div class="card border-warning border-2 shadow-lg text-center py-3 h-100">
       <div class="display-3 mb-1">🏆</div>
-      <div class="fw-bold fs-5"><%= ranking[0].username %></div>
+      <a href="/perfil/<%= ranking[0].username %>" class="text-decoration-none text-dark"><div class="fw-bold fs-5"><%= ranking[0].username %></div></a>
       <div class="fs-3 fw-bold text-warning"><%= ranking[0].puntos_total %> <small class="fs-6 fw-normal text-muted">pts</small></div>
       <div class="small text-muted mt-1">
         <span class="badge bg-warning text-dark me-1"><%= ranking[0].exactos %> 🎯</span>
@@ -34,7 +34,7 @@
   <div class="col-6 col-sm-4 col-md-3 order-2 order-sm-1">
     <div class="card border-0 shadow text-center py-3 h-100">
       <div class="display-4 mb-1">🥈</div>
-      <div class="fw-bold"><%= ranking[1].username %></div>
+      <a href="/perfil/<%= ranking[1].username %>" class="text-decoration-none text-dark"><div class="fw-bold"><%= ranking[1].username %></div></a>
       <div class="fs-4 fw-bold text-secondary"><%= ranking[1].puntos_total %> <small class="fs-6 fw-normal text-muted">pts</small></div>
       <div class="small text-muted mt-1">
         <span class="badge bg-warning text-dark me-1"><%= ranking[1].exactos %> 🎯</span>
@@ -45,7 +45,7 @@
   <div class="col-6 col-sm-4 col-md-3 order-3">
     <div class="card border-0 shadow text-center py-3 h-100">
       <div class="display-4 mb-1">🥉</div>
-      <div class="fw-bold"><%= ranking[2].username %></div>
+      <a href="/perfil/<%= ranking[2].username %>" class="text-decoration-none text-dark"><div class="fw-bold"><%= ranking[2].username %></div></a>
       <div class="fs-4 fw-bold" style="color:#cd7f32"><%= ranking[2].puntos_total %> <small class="fs-6 fw-normal text-muted">pts</small></div>
       <div class="small text-muted mt-1">
         <span class="badge bg-warning text-dark me-1"><%= ranking[2].exactos %> 🎯</span>
@@ -85,9 +85,11 @@
               <% } %>
             </td>
             <td>
-              <span class="fw-<%= u.id === uid ? 'bold text-primary' : 'semibold' %> ranking-nombre">
-                <%= u.username %>
-              </span>
+              <a href="/perfil/<%= u.username %>" class="text-decoration-none">
+                <span class="fw-<%= u.id === uid ? 'bold text-primary' : 'semibold' %> ranking-nombre">
+                  <%= u.username %>
+                </span>
+              </a>
               <% if (u.id === uid) { %>
                 <span class="badge bg-primary ms-1 d-none d-sm-inline">vos</span>
               <% } %>

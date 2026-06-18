@@ -28,6 +28,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(require('./middleware/badge'));
+
 app.use('/', require('./routes/auth'));
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/grupos', require('./routes/grupos'));
@@ -37,6 +39,8 @@ app.use('/admin', require('./routes/admin'));
 app.use('/hoy', require('./routes/hoy'));
 app.use('/historial', require('./routes/historial'));
 app.use('/especiales', require('./routes/especiales'));
+app.use('/perfil', require('./routes/perfil'));
+app.use('/eliminatoria', require('./routes/eliminatoria'));
 
 // Health check – muestra estado de DB
 app.get('/health', async (req, res) => {

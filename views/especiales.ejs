@@ -6,7 +6,7 @@
   </a>
   <div>
     <h2 class="fw-bold mb-0"><i class="bi bi-stars text-warning me-2"></i>Pronósticos Especiales</h2>
-    <div class="text-muted small">Podio y Goleador del Mundial 2026</div>
+    <div class="text-muted small">Podio, Goleador y MVP del Mundial 2026</div>
   </div>
 </div>
 
@@ -119,8 +119,12 @@
   </div>
   <% }) %>
 
-  <!-- ── GOLEADOR ── -->
+  <!-- ── GOLEADOR + MVP (side by side) ── -->
   <div class="col-12 col-md-6">
+    <div class="row g-3 h-100">
+
+  <!-- GOLEADOR -->
+  <div class="col-12">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-header bg-danger text-white fw-bold py-2">
         <i class="bi bi-lightning-charge-fill me-2"></i>⚽ Goleador del torneo
@@ -188,8 +192,63 @@
     </div>
   </div>
 
+  <!-- MVP -->
+  <div class="col-12">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header fw-bold py-2" style="background:#6f42c1;color:#fff">
+        <i class="bi bi-star-fill me-2"></i>🌟 MVP del torneo
+      </div>
+      <div class="card-body">
+        <% if (!cerrado) { %>
+        <p class="text-muted small mb-3">El mejor jugador del torneo (no necesariamente el goleador).</p>
+        <% if (miosMap.mvp) { %>
+        <div class="mb-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex align-items-center gap-2 badge-eleccion" data-tipo="mvp">
+          <i class="bi bi-check-circle-fill text-success"></i>
+          <span class="fw-semibold">Tu elección: <strong class="val-eleccion"><%= miosMap.mvp %></strong></span>
+        </div>
+        <% } %>
+        <input type="text" id="inp-mvp" class="form-control mb-2"
+          value="<%= miosMap.mvp || '' %>"
+          placeholder="Ej: Pedri, Bellingham..."
+          maxlength="100" autocomplete="off">
+        <button class="btn w-100 btn-guardar-especial" style="background:#6f42c1;color:#fff" data-tipo="mvp" data-inp="inp-mvp">
+          <i class="bi bi-save me-1"></i><%= miosMap.mvp ? 'Actualizar' : 'Guardar' %>
+        </button>
+        <div class="msg-especial-mvp small text-center mt-2"></div>
+        <% } else { %>
+        <% if (miosMap.mvp) { %>
+        <div class="p-3 rounded text-center mb-3" style="background:#6f42c120;border:1px solid #6f42c1">
+          <div class="text-muted small mb-1">Tu pronóstico</div>
+          <div class="fw-bold fs-5">🌟 <%= miosMap.mvp %></div>
+        </div>
+        <% } else { %>
+        <div class="text-muted small fst-italic mb-3">No cargaste pronóstico de MVP</div>
+        <% } %>
+        <% if (distribucion && distribucion.mvp && distribucion.mvp.length > 0) { %>
+        <hr class="my-2">
+        <div class="small fw-semibold text-muted mb-2">¿Cómo votó el grupo?</div>
+        <% const totalM = distribucion.mvp.reduce((a,x) => a + parseInt(x.votos), 0); %>
+        <% distribucion.mvp.forEach(row => { %>
+        <% const pctM = Math.round(parseInt(row.votos) * 100 / totalM); %>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="text-nowrap" style="min-width:130px;font-size:.82rem"><%= row.valor %></span>
+          <div class="progress flex-grow-1 rounded-pill" style="height:13px">
+            <div class="progress-bar" style="width:<%= pctM %>%;background:#6f42c1"></div>
+          </div>
+          <span class="text-muted small text-nowrap"><%= row.votos %> (<%= pctM %>%)</span>
+        </div>
+        <% }) %>
+        <% } %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /row inner -->
+  </div><!-- /col-12 col-md-6 wrapper -->
+
   <!-- ── RESUMEN MI PODIO (visible siempre si tiene algo cargado) ── -->
-  <% const tieneAlgo = miosMap.campeon || miosMap.segundo || miosMap.tercero || miosMap.goleador; %>
+  <% const tieneAlgo = miosMap.campeon || miosMap.segundo || miosMap.tercero || miosMap.goleador || miosMap.mvp; %>
   <% if (tieneAlgo) { %>
   <div class="col-12 col-md-6">
     <div class="card border-0 shadow-sm bg-dark text-white">
@@ -202,6 +261,7 @@
           { tipo:'segundo', label:'🥈 2do puesto' },
           { tipo:'tercero', label:'🥉 3er puesto' },
           { tipo:'goleador', label:'⚽ Goleador' },
+          { tipo:'mvp', label:'🌟 MVP' },
         ].forEach(s => { %>
         <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary">
           <span class="small text-secondary"><%= s.label %></span>
