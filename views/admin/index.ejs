@@ -162,6 +162,39 @@
     </div>
   </div>
 
+  <!-- Cargar pronóstico manual -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm border-info">
+      <div class="card-header bg-info text-dark fw-bold">
+        <i class="bi bi-pencil-square me-2"></i>Cargar pronóstico manual
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">Cargá o modificá el pronóstico de un usuario para un partido específico.</p>
+        <div class="row g-2 mb-2">
+          <div class="col-12 col-sm-5">
+            <input type="text" id="inpPronUsername" class="form-control" placeholder="Usuario" value="Ferfre">
+          </div>
+          <div class="col-12">
+            <select id="selPronPartido" class="form-select">
+              <option value="">— Primero cargá la lista de partidos arriba —</option>
+            </select>
+          </div>
+          <div class="col-5">
+            <input type="number" id="inpPronLocal" class="form-control text-center fw-bold" placeholder="Local" min="0" max="20" value="2">
+          </div>
+          <div class="col-2 d-flex align-items-center justify-content-center fw-bold text-muted">–</div>
+          <div class="col-5">
+            <input type="number" id="inpPronVisit" class="form-control text-center fw-bold" placeholder="Visita" min="0" max="20" value="1">
+          </div>
+        </div>
+        <button id="btnCargarPron" class="btn btn-info w-100">
+          <i class="bi bi-save me-1"></i>Cargar pronóstico
+        </button>
+        <div id="pronManualMsg" class="small mt-2"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Renombrar usuario -->
   <div class="col-12 col-md-6">
     <div class="card border-0 shadow-sm">
@@ -251,19 +284,36 @@ document.getElementById('btnSync').addEventListener('click', async function() {
   this.innerHTML = '<i class="bi bi-cloud-download me-2"></i>Sincronizar ahora';
 });
 
-// Cargar lista de partidos para el selector
+// Cargar lista de partidos para ambos selectores
+let partidosCache = null;
+async function cargarListaPartidos() {
+  if (partidosCache) return partidosCache;
+  const partidos = await fetch('/admin/partidos-lista').then(r => r.json());
+  partidosCache = partidos;
+  return partidos;
+}
+
 document.getElementById('btnCargarPartidos').addEventListener('click', async function(e) {
   e.preventDefault();
   this.textContent = 'Cargando...';
   try {
-    const partidos = await fetch('/admin/partidos-lista').then(r => r.json());
+    const partidos = await cargarListaPartidos();
+    // Selector de limpiar
     const sel = document.getElementById('selPartidoLimpiar');
     sel.innerHTML = '<option value="">— Seleccioná un partido —</option>';
+    // Selector de pronóstico manual
+    const selP = document.getElementById('selPronPartido');
+    selP.innerHTML = '<option value="">— Seleccioná un partido —</option>';
     partidos.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = `${p.fecha} · ${p.local} vs ${p.visit} (${p.total} prons)`;
-      sel.appendChild(opt);
+      const txt = `${p.fecha} · ${p.local} vs ${p.visit} (${p.total} prons)`;
+      [sel, selP].forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = txt;
+        // Pre-seleccionar Chequia vs Sudáfrica en el selector de pronóstico manual
+        if (p.local.includes('Chequia') && p.visit.includes('Sudáfrica')) opt.selected = true;
+        s.appendChild(opt);
+      });
     });
     document.getElementById('btnLimpiarPartido').disabled = false;
     this.style.display = 'none';
@@ -289,6 +339,31 @@ document.getElementById('btnLimpiarPartido').addEventListener('click', async fun
   } catch(e) { msg.innerHTML = `<div class="alert alert-danger py-2">Error de red</div>`; }
   this.disabled = false;
   this.innerHTML = '<i class="bi bi-trash me-1"></i>Limpiar';
+});
+
+document.getElementById('btnCargarPron').addEventListener('click', async function() {
+  const username   = document.getElementById('inpPronUsername').value.trim();
+  const partido_id = document.getElementById('selPronPartido').value;
+  const gl         = document.getElementById('inpPronLocal').value;
+  const gv         = document.getElementById('inpPronVisit').value;
+  const msg        = document.getElementById('pronManualMsg');
+  if (!username || !partido_id || gl==='' || gv==='') {
+    msg.innerHTML = '<div class="alert alert-warning py-2">Completá todos los campos</div>';
+    return;
+  }
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+  try {
+    const r = await fetch('/admin/cargar-pronostico-manual', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ username, partido_id, goles_local: gl, goles_visitante: gv })
+    }).then(x => x.json());
+    msg.innerHTML = r.ok
+      ? `<div class="alert alert-success py-2">${r.msg}</div>`
+      : `<div class="alert alert-danger py-2">${r.msg}</div>`;
+  } catch(e) { msg.innerHTML = '<div class="alert alert-danger py-2">Error de red</div>'; }
+  this.disabled = false;
+  this.innerHTML = '<i class="bi bi-save me-1"></i>Cargar pronóstico';
 });
 
 document.getElementById('btnRenombrar').addEventListener('click', async function() {

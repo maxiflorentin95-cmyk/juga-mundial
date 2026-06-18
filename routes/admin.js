@@ -238,6 +238,53 @@ router.post('/recalcular-puntos', requireAdmin, async (req, res) => {
   }
 });
 
+// Cargar pronóstico manual en nombre de un usuario
+router.post('/cargar-pronostico-manual', requireAdmin, async (req, res) => {
+  try {
+    const { username, partido_id, goles_local, goles_visitante } = req.body;
+    const user = await prepare('SELECT id FROM usuarios WHERE username=$1').get(username);
+    if (!user) return res.json({ ok: false, msg: `Usuario "${username}" no encontrado` });
+
+    const partido = await prepare(
+      'SELECT p.*, el.nombre AS local, ev.nombre AS visit FROM partidos p JOIN equipos el ON p.equipo_local_id=el.id JOIN equipos ev ON p.equipo_visitante_id=ev.id WHERE p.id=$1'
+    ).get(partido_id);
+    if (!partido) return res.json({ ok: false, msg: 'Partido no encontrado' });
+
+    const gl = parseInt(goles_local), gv = parseInt(goles_visitante);
+    if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0)
+      return res.json({ ok: false, msg: 'Goles inválidos' });
+
+    // Calcular puntos si el partido ya está finalizado
+    let pts = 0;
+    if (partido.estado === 'finalizado' && partido.goles_local !== null) {
+      pts = calcularPuntos(gl, gv, partido.goles_local, partido.goles_visitante);
+    }
+
+    // Verificar si ya tenía pronóstico (para ajustar puntos_total)
+    const previo = await prepare('SELECT puntos_obtenidos FROM pronosticos WHERE usuario_id=$1 AND partido_id=$2').get(user.id, partido_id);
+
+    await prepare(`
+      INSERT INTO pronosticos (usuario_id, partido_id, goles_local, goles_visitante, puntos_obtenidos, updated_at)
+      VALUES ($1,$2,$3,$4,$5,NOW())
+      ON CONFLICT(usuario_id, partido_id) DO UPDATE SET
+        goles_local=EXCLUDED.goles_local, goles_visitante=EXCLUDED.goles_visitante,
+        puntos_obtenidos=EXCLUDED.puntos_obtenidos, updated_at=NOW()
+    `).run(user.id, partido_id, gl, gv, pts);
+
+    // Ajustar puntos_total
+    const ptsPrevios = previo ? previo.puntos_obtenidos : 0;
+    const diff = pts - ptsPrevios;
+    if (diff !== 0) {
+      await prepare('UPDATE usuarios SET puntos_total = GREATEST(0, puntos_total + $1) WHERE id=$2').run(diff, user.id);
+    }
+
+    res.json({ ok: true, msg: `✓ Pronóstico de ${username}: ${partido.local} ${gl}–${gv} ${partido.visit}${partido.estado === 'finalizado' ? ` → ${pts} pts` : ' (partido pendiente, puntos se calcularán al finalizar)'}` });
+  } catch (e) {
+    console.error(e);
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
 // Lista de partidos con conteo de pronósticos (para el selector del admin)
 router.get('/partidos-lista', requireAdmin, async (req, res) => {
   try {
