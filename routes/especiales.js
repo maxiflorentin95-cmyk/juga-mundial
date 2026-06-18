@@ -5,6 +5,9 @@ const { requireLogin } = require('../middleware/auth');
 // Cierre: 18 de junio 2026 23:59 Paraguay (UTC-3 fijo)
 const CIERRE = new Date('2026-06-18T23:59:00-03:00');
 
+const TIPOS_EQUIPO = ['campeon', 'segundo', 'tercero'];
+const TIPOS_VALIDOS = [...TIPOS_EQUIPO, 'goleador'];
+
 function estaCerrado() {
   return new Date() >= CIERRE;
 }
@@ -23,20 +26,13 @@ router.get('/', requireLogin, async (req, res) => {
     const miosMap = {};
     misProns.forEach(p => (miosMap[p.tipo] = p.valor));
 
-    // Para mostrar distribución (visible para todos una vez cerrado)
     let distribucion = null;
     if (estaCerrado()) {
-      const campeon = await prepare(`
-        SELECT valor, COUNT(*) AS votos
-        FROM pronosticos_especiales WHERE tipo='campeon'
-        GROUP BY valor ORDER BY votos DESC
-      `).all();
-      const goleador = await prepare(`
-        SELECT valor, COUNT(*) AS votos
-        FROM pronosticos_especiales WHERE tipo='goleador'
-        GROUP BY valor ORDER BY votos DESC
-      `).all();
-      distribucion = { campeon, goleador };
+      const rows = await Promise.all(TIPOS_VALIDOS.map(t =>
+        prepare(`SELECT valor, COUNT(*) AS votos FROM pronosticos_especiales WHERE tipo=$1 GROUP BY valor ORDER BY votos DESC`).all(t)
+      ));
+      distribucion = {};
+      TIPOS_VALIDOS.forEach((t, i) => (distribucion[t] = rows[i]));
     }
 
     res.render('especiales', {
@@ -44,7 +40,6 @@ router.get('/', requireLogin, async (req, res) => {
       equipos,
       miosMap,
       cerrado: estaCerrado(),
-      cierre: CIERRE,
       distribucion,
     });
   } catch (e) { console.error(e); res.status(500).send('Error'); }
@@ -57,7 +52,7 @@ router.post('/guardar', requireLogin, async (req, res) => {
     const uid = req.session.usuario.id;
     const { tipo, valor } = req.body;
 
-    if (!['campeon', 'goleador'].includes(tipo))
+    if (!TIPOS_VALIDOS.includes(tipo))
       return res.json({ ok: false, msg: 'Tipo inválido' });
     if (!valor || valor.trim().length === 0)
       return res.json({ ok: false, msg: 'Ingresá un valor' });

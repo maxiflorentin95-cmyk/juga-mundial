@@ -6,7 +6,7 @@
   </a>
   <div>
     <h2 class="fw-bold mb-0"><i class="bi bi-stars text-warning me-2"></i>Pronósticos Especiales</h2>
-    <div class="text-muted small">Campeón y Goleador del Mundial 2026</div>
+    <div class="text-muted small">Podio y Goleador del Mundial 2026</div>
   </div>
 </div>
 
@@ -26,85 +26,88 @@
   <div>
     <strong>¡Último momento!</strong>
     Cierre hoy <strong>18 de junio a las 23:59 hs</strong> (hora Paraguay).
-    Podés cambiar tu pronóstico hasta ese momento.
+    Podés cambiar tus pronósticos hasta ese momento.
   </div>
 </div>
 <% } %>
 
+<%
+  const podio = [
+    { tipo: 'campeon',  label: '🥇 Campeón',    color: 'warning', textColor: 'dark',  icon: 'trophy-fill' },
+    { tipo: 'segundo',  label: '🥈 2do puesto',  color: 'secondary', textColor: 'white', icon: 'patch-check-fill' },
+    { tipo: 'tercero',  label: '🥉 3er puesto',  color: 'danger-subtle', textColor: 'dark', icon: 'award-fill' },
+  ];
+%>
+
 <div class="row g-4">
 
-  <!-- ── CAMPEÓN ── -->
-  <div class="col-12 col-md-6">
+  <!-- ── PODIO (3 cards) ── -->
+  <% podio.forEach(slot => { %>
+  <div class="col-12 col-md-4">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-warning text-dark fw-bold py-2">
-        <i class="bi bi-trophy-fill me-2"></i>¿Quién será el Campeón?
+      <div class="card-header bg-<%= slot.color %> text-<%= slot.textColor %> fw-bold py-2">
+        <i class="bi bi-<%= slot.icon %> me-2"></i><%= slot.label %>
       </div>
       <div class="card-body">
 
         <% if (!cerrado) { %>
-        <p class="text-muted small mb-3">Seleccioná el equipo que creés que ganará el Mundial 2026.</p>
-
-        <!-- Selección actual -->
-        <% if (miosMap.campeon) { %>
-        <div class="mb-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex align-items-center gap-2">
+        <% if (miosMap[slot.tipo]) { %>
+        <div class="mb-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex align-items-center gap-2 badge-eleccion" data-tipo="<%= slot.tipo %>">
           <i class="bi bi-check-circle-fill text-success"></i>
-          <span class="fw-semibold">Tu elección: <strong><%= miosMap.campeon %></strong></span>
+          <span class="fw-semibold">Tu elección: <strong class="val-eleccion"><%= miosMap[slot.tipo] %></strong></span>
         </div>
         <% } %>
 
-        <!-- Dropdown de equipos agrupado por grupo -->
-        <div class="mb-3">
-          <label class="form-label small fw-semibold">Seleccioná el campeón:</label>
-          <select id="sel-campeon" class="form-select">
-            <option value="">— Elegí un equipo —</option>
-            <%
-              const gruposUnicos = [...new Set(equipos.map(e => e.grupo))].sort();
-            %>
-            <% gruposUnicos.forEach(g => { %>
-            <optgroup label="Grupo <%= g %>">
-              <% equipos.filter(e => e.grupo === g).forEach(e => { %>
-              <option value="<%= e.nombre %>" <%= miosMap.campeon === e.nombre ? 'selected' : '' %>>
-                <%= e.bandera %> <%= e.nombre %>
-              </option>
-              <% }) %>
-            </optgroup>
+        <label class="form-label small fw-semibold">Seleccioná el equipo:</label>
+        <select id="sel-<%= slot.tipo %>" class="form-select mb-3">
+          <option value="">— Elegí un equipo —</option>
+          <%
+            const gruposUnicos = [...new Set(equipos.map(e => e.grupo))].sort();
+          %>
+          <% gruposUnicos.forEach(g => { %>
+          <optgroup label="Grupo <%= g %>">
+            <% equipos.filter(e => e.grupo === g).forEach(e => { %>
+            <option value="<%= e.nombre %>" <%= miosMap[slot.tipo] === e.nombre ? 'selected' : '' %>>
+              <%= e.bandera %> <%= e.nombre %>
+            </option>
             <% }) %>
-          </select>
-        </div>
-        <button class="btn btn-warning btn-guardar-especial w-100" data-tipo="campeon" data-sel="sel-campeon">
-          <i class="bi bi-save me-1"></i><%= miosMap.campeon ? 'Actualizar' : 'Guardar' %>
+          </optgroup>
+          <% }) %>
+        </select>
+        <button class="btn btn-<%= slot.color === 'danger-subtle' ? 'danger' : slot.color %> btn-guardar-especial w-100"
+          data-tipo="<%= slot.tipo %>" data-sel="sel-<%= slot.tipo %>">
+          <i class="bi bi-save me-1"></i><%= miosMap[slot.tipo] ? 'Actualizar' : 'Guardar' %>
         </button>
-        <div class="msg-especial-campeon small text-center mt-2"></div>
+        <div class="msg-especial-<%= slot.tipo %> small text-center mt-2"></div>
 
         <% } else { %>
-        <!-- Cerrado: mostrar mi elección -->
-        <% if (miosMap.campeon) { %>
+        <% if (miosMap[slot.tipo]) { %>
         <div class="p-3 rounded bg-warning bg-opacity-10 border border-warning text-center mb-3">
           <div class="text-muted small mb-1">Tu pronóstico</div>
-          <div class="fw-bold fs-5">
-            <% const eqCampeon = equipos.find(e => e.nombre === miosMap.campeon); %>
-            <%= eqCampeon ? eqCampeon.bandera : '' %> <%= miosMap.campeon %>
+          <div class="fw-bold fs-6">
+            <% const eq = equipos.find(e => e.nombre === miosMap[slot.tipo]); %>
+            <%= eq ? eq.bandera : '' %> <%= miosMap[slot.tipo] %>
           </div>
         </div>
         <% } else { %>
-        <div class="text-muted small fst-italic">No cargaste pronóstico de campeón</div>
+        <div class="text-muted small fst-italic mb-3">No cargaste pronóstico</div>
         <% } %>
         <% } %>
 
-        <!-- Distribución (solo si cerrado y hay datos) -->
-        <% if (cerrado && distribucion && distribucion.campeon.length > 0) { %>
-        <hr class="my-3">
+        <!-- Distribución post-cierre -->
+        <% if (cerrado && distribucion && distribucion[slot.tipo] && distribucion[slot.tipo].length > 0) { %>
+        <hr class="my-2">
         <div class="small fw-semibold text-muted mb-2">¿Cómo votó el grupo?</div>
-        <% const totalV = distribucion.campeon.reduce((a,x) => a + parseInt(x.votos), 0); %>
-        <% distribucion.campeon.forEach(row => { %>
+        <% const totalV = distribucion[slot.tipo].reduce((a,x) => a + parseInt(x.votos), 0); %>
+        <% distribucion[slot.tipo].forEach(row => { %>
         <% const pct = Math.round(parseInt(row.votos) * 100 / totalV); %>
-        <% const eq = equipos.find(e => e.nombre === row.valor); %>
+        <% const eqD = equipos.find(e => e.nombre === row.valor); %>
         <div class="d-flex align-items-center gap-2 mb-1">
-          <span class="text-nowrap" style="min-width:130px;font-size:.85rem">
-            <%= eq ? eq.bandera : '' %> <%= row.valor %>
+          <span class="text-nowrap" style="min-width:120px;font-size:.82rem">
+            <%= eqD ? eqD.bandera : '' %> <%= row.valor %>
           </span>
-          <div class="progress flex-grow-1 rounded-pill" style="height:14px">
-            <div class="progress-bar bg-warning" style="width:<%= pct %>%"></div>
+          <div class="progress flex-grow-1 rounded-pill" style="height:13px">
+            <div class="progress-bar bg-<%= slot.color === 'danger-subtle' ? 'danger' : slot.color %>" style="width:<%= pct %>%"></div>
           </div>
           <span class="text-muted small text-nowrap"><%= row.votos %> (<%= pct %>%)</span>
         </div>
@@ -114,43 +117,37 @@
       </div>
     </div>
   </div>
+  <% }) %>
 
   <!-- ── GOLEADOR ── -->
   <div class="col-12 col-md-6">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-header bg-danger text-white fw-bold py-2">
-        <i class="bi bi-lightning-charge-fill me-2"></i>¿Quién será el Goleador?
+        <i class="bi bi-lightning-charge-fill me-2"></i>⚽ Goleador del torneo
       </div>
       <div class="card-body">
 
         <% if (!cerrado) { %>
-        <p class="text-muted small mb-3">Escribí el nombre del jugador que creés que será el máximo goleador del torneo.</p>
+        <p class="text-muted small mb-3">Escribí el nombre del jugador que creés que será el máximo goleador.</p>
 
-        <!-- Selección actual -->
         <% if (miosMap.goleador) { %>
-        <div class="mb-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex align-items-center gap-2">
+        <div class="mb-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex align-items-center gap-2 badge-eleccion" data-tipo="goleador">
           <i class="bi bi-check-circle-fill text-success"></i>
-          <span class="fw-semibold">Tu elección: <strong><%= miosMap.goleador %></strong></span>
+          <span class="fw-semibold">Tu elección: <strong class="val-eleccion"><%= miosMap.goleador %></strong></span>
         </div>
         <% } %>
 
-        <div class="mb-3">
-          <label class="form-label small fw-semibold">Nombre del goleador:</label>
-          <input type="text" id="inp-goleador" class="form-control"
-            value="<%= miosMap.goleador || '' %>"
-            placeholder="Ej: Lionel Messi"
-            maxlength="100" autocomplete="off">
-          <div class="form-text">Escribí nombre y apellido del jugador.</div>
-        </div>
+        <label class="form-label small fw-semibold">Nombre del goleador:</label>
+        <input type="text" id="inp-goleador" class="form-control mb-2"
+          value="<%= miosMap.goleador || '' %>"
+          placeholder="Ej: Lionel Messi"
+          maxlength="100" autocomplete="off">
 
-        <!-- Sugerencias rápidas -->
         <div class="mb-3">
-          <div class="small text-muted mb-1">Sugerencias rápidas:</div>
+          <div class="small text-muted mb-1">Sugerencias:</div>
           <div class="d-flex flex-wrap gap-1">
             <% ['Lionel Messi','Kylian Mbappé','Erling Haaland','Vinicius Jr.','Harry Kane','Lautaro Martínez','Neymar Jr.','Cristiano Ronaldo'].forEach(j => { %>
-            <button type="button" class="btn btn-outline-secondary btn-sm btn-sugerencia" data-nombre="<%= j %>">
-              <%= j %>
-            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm btn-sugerencia" data-nombre="<%= j %>"><%= j %></button>
             <% }) %>
           </div>
         </div>
@@ -161,27 +158,25 @@
         <div class="msg-especial-goleador small text-center mt-2"></div>
 
         <% } else { %>
-        <!-- Cerrado: mostrar mi elección -->
         <% if (miosMap.goleador) { %>
         <div class="p-3 rounded bg-danger bg-opacity-10 border border-danger text-center mb-3">
           <div class="text-muted small mb-1">Tu pronóstico</div>
           <div class="fw-bold fs-5"><i class="bi bi-lightning-charge-fill text-danger me-1"></i><%= miosMap.goleador %></div>
         </div>
         <% } else { %>
-        <div class="text-muted small fst-italic">No cargaste pronóstico de goleador</div>
+        <div class="text-muted small fst-italic mb-3">No cargaste pronóstico de goleador</div>
         <% } %>
         <% } %>
 
-        <!-- Distribución (solo si cerrado y hay datos) -->
-        <% if (cerrado && distribucion && distribucion.goleador.length > 0) { %>
-        <hr class="my-3">
+        <% if (cerrado && distribucion && distribucion.goleador && distribucion.goleador.length > 0) { %>
+        <hr class="my-2">
         <div class="small fw-semibold text-muted mb-2">¿Cómo votó el grupo?</div>
         <% const totalG = distribucion.goleador.reduce((a,x) => a + parseInt(x.votos), 0); %>
         <% distribucion.goleador.forEach(row => { %>
         <% const pctG = Math.round(parseInt(row.votos) * 100 / totalG); %>
         <div class="d-flex align-items-center gap-2 mb-1">
-          <span class="text-nowrap" style="min-width:130px;font-size:.85rem"><%= row.valor %></span>
-          <div class="progress flex-grow-1 rounded-pill" style="height:14px">
+          <span class="text-nowrap" style="min-width:130px;font-size:.82rem"><%= row.valor %></span>
+          <div class="progress flex-grow-1 rounded-pill" style="height:13px">
             <div class="progress-bar bg-danger" style="width:<%= pctG %>%"></div>
           </div>
           <span class="text-muted small text-nowrap"><%= row.votos %> (<%= pctG %>%)</span>
@@ -193,18 +188,46 @@
     </div>
   </div>
 
+  <!-- ── RESUMEN MI PODIO (visible siempre si tiene algo cargado) ── -->
+  <% const tieneAlgo = miosMap.campeon || miosMap.segundo || miosMap.tercero || miosMap.goleador; %>
+  <% if (tieneAlgo) { %>
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm bg-dark text-white">
+      <div class="card-header bg-dark border-secondary fw-bold py-2">
+        <i class="bi bi-person-fill me-2"></i>Tu pronóstico completo
+      </div>
+      <div class="card-body py-2">
+        <% [
+          { tipo:'campeon', label:'🥇 Campeón' },
+          { tipo:'segundo', label:'🥈 2do puesto' },
+          { tipo:'tercero', label:'🥉 3er puesto' },
+          { tipo:'goleador', label:'⚽ Goleador' },
+        ].forEach(s => { %>
+        <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary">
+          <span class="small text-secondary"><%= s.label %></span>
+          <% if (miosMap[s.tipo]) { %>
+            <% const eqR = equipos.find(e => e.nombre === miosMap[s.tipo]); %>
+            <span class="fw-semibold small"><%= eqR ? eqR.bandera + ' ' : '' %><%= miosMap[s.tipo] %></span>
+          <% } else { %>
+            <span class="text-secondary small fst-italic">Sin cargar</span>
+          <% } %>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
 </div>
 
 <% if (!cerrado) { %>
 <script>
-// Sugerencias goleador
 document.querySelectorAll('.btn-sugerencia').forEach(btn => {
   btn.addEventListener('click', function() {
     document.getElementById('inp-goleador').value = this.dataset.nombre;
   });
 });
 
-// Guardar especiales
 document.querySelectorAll('.btn-guardar-especial').forEach(btn => {
   btn.addEventListener('click', async function() {
     const tipo = this.dataset.tipo;
@@ -214,7 +237,7 @@ document.querySelectorAll('.btn-guardar-especial').forEach(btn => {
     const msgEl = document.querySelector('.msg-especial-' + tipo);
 
     if (!valor) {
-      msgEl.textContent = tipo === 'campeon' ? 'Elegí un equipo' : 'Escribí un nombre';
+      msgEl.textContent = tipo === 'goleador' ? 'Escribí un nombre' : 'Elegí un equipo';
       msgEl.className = 'msg-especial-' + tipo + ' small text-center mt-2 text-danger';
       return;
     }
@@ -231,12 +254,13 @@ document.querySelectorAll('.btn-guardar-especial').forEach(btn => {
       const data = await res.json();
 
       if (data.ok) {
-        // Actualizar badge de "tu elección"
+        // Actualizar o crear badge de elección
         const card = this.closest('.card-body');
-        let badge = card.querySelector('.badge-eleccion');
+        let badge = card.querySelector('.badge-eleccion[data-tipo="' + tipo + '"]');
         if (!badge) {
           badge = document.createElement('div');
           badge.className = 'badge-eleccion mb-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex align-items-center gap-2';
+          badge.dataset.tipo = tipo;
           badge.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i><span class="fw-semibold">Tu elección: <strong class="val-eleccion"></strong></span>';
           this.before(badge);
         }
