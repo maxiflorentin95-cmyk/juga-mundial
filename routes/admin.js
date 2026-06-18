@@ -133,6 +133,32 @@ router.get('/usuarios', requireAdmin, async (req, res) => {
   } catch (e) { res.status(500).send('Error'); }
 });
 
+router.post('/importar-puntos', requireAdmin, async (req, res) => {
+  const puntos = [
+    { username: 'mfiorentin',  pts: 38 },
+    { username: 'Chrisis',     pts: 37 },
+    { username: 'JulioMarti',  pts: 32 },
+    { username: 'Chebis',      pts: 31 },
+    { username: 'Ortepro18',   pts: 29 },
+    { username: 'Ferfre',      pts: 29 },
+    { username: 'Ronaldraf',   pts: 29 },
+    { username: 'MrPomberoPY', pts: 25 },
+    { username: 'HugoLoup',    pts: 23 },
+    { username: 'JoeAlca',     pts: 17 },
+    { username: 'Luisma',      pts: 0  },
+  ];
+  const resultados = [];
+  for (const u of puntos) {
+    try {
+      const r = await prepare('UPDATE usuarios SET puntos_total=$1 WHERE username=$2').run(u.pts, u.username);
+      resultados.push({ username: u.username, ok: r.changes > 0, pts: u.pts });
+    } catch (e) {
+      resultados.push({ username: u.username, ok: false, msg: e.message });
+    }
+  }
+  res.json({ ok: true, resultados });
+});
+
 router.post('/importar-usuarios', requireAdmin, async (req, res) => {
   const hash = bcrypt.hashSync('mundial2026', 10);
   const resultados = [];
