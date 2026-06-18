@@ -51,7 +51,7 @@
           const pron = pronMap[p.id];
           const ahora = new Date();
           const matchTime = new Date(p.fecha + 'T' + p.hora + ':00');
-          const cerrado = (matchTime - ahora) < 60 * 60 * 1000;
+          const cerrado = (matchTime - ahora) < 5 * 60 * 1000;
         %>
         <div class="partido-row border-bottom px-3 py-3">
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">

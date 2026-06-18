@@ -20,8 +20,9 @@ const USUARIOS_IMPORTAR = [
 ];
 
 function calcularPuntos(pL, pV, rL, rV) {
-  if (pL === rL && pV === rV) return 5;
-  if (Math.sign(pL - pV) === Math.sign(rL - rV)) return 1;
+  if (pL === rL && pV === rV) return 5;                          // exacto
+  if ((pL - pV) === (rL - rV)) return 3;                        // diferencia correcta
+  if (Math.sign(pL - pV) === Math.sign(rL - rV)) return 2;     // ganador correcto
   return 0;
 }
 
@@ -131,6 +132,93 @@ router.get('/usuarios', requireAdmin, async (req, res) => {
     const usuarios = await prepare('SELECT id, username, email, es_admin, puntos_total, created_at FROM usuarios ORDER BY username').all();
     res.render('admin/usuarios', { title: 'Gestión de Usuarios', usuarios });
   } catch (e) { res.status(500).send('Error'); }
+});
+
+router.post('/cargar-resultados-wc26', requireAdmin, async (req, res) => {
+  const resultados = [
+    // Grupo A
+    { local: 'México',             visit: 'Sudáfrica',          gl: 2, gv: 0 },
+    { local: 'Corea del Sur',      visit: 'Chequia',             gl: 2, gv: 1 },
+    // Grupo B
+    { local: 'Canadá',             visit: 'Bosnia-Herzegovina',  gl: 1, gv: 1 },
+    { local: 'Suiza',              visit: 'Catar',               gl: 1, gv: 1 },
+    // Grupo C
+    { local: 'Brasil',             visit: 'Marruecos',           gl: 1, gv: 1 },
+    { local: 'Haití',              visit: 'Escocia',             gl: 0, gv: 1 },
+    // Grupo D
+    { local: 'Estados Unidos',     visit: 'Paraguay',            gl: 4, gv: 1 },
+    { local: 'Australia',          visit: 'Turquía',             gl: 2, gv: 0 },
+    // Grupo E
+    { local: 'Alemania',           visit: 'Curazao',             gl: 7, gv: 1 },
+    { local: 'Costa de Marfil',    visit: 'Ecuador',             gl: 1, gv: 0 },
+    // Grupo F
+    { local: 'Países Bajos',       visit: 'Japón',               gl: 2, gv: 2 },
+    { local: 'Suecia',             visit: 'Túnez',               gl: 5, gv: 1 },
+    // Grupo G
+    { local: 'Bélgica',            visit: 'Egipto',              gl: 1, gv: 1 },
+    { local: 'Irán',               visit: 'Nueva Zelanda',       gl: 2, gv: 2 },
+    // Grupo H
+    { local: 'España',             visit: 'Cabo Verde',          gl: 0, gv: 0 },
+    { local: 'Arabia Saudita',     visit: 'Uruguay',             gl: 1, gv: 1 },
+    // Grupo I
+    { local: 'Francia',            visit: 'Senegal',             gl: 3, gv: 1 },
+    { local: 'Irak',               visit: 'Noruega',             gl: 1, gv: 4 },
+    // Grupo J
+    { local: 'Argentina',          visit: 'Argelia',             gl: 3, gv: 0 },
+    { local: 'Austria',            visit: 'Jordania',            gl: 3, gv: 1 },
+    // Grupo K
+    { local: 'Portugal',           visit: 'Rep. Dem. Congo',     gl: 1, gv: 1 },
+    { local: 'Uzbekistán',         visit: 'Colombia',            gl: 1, gv: 3 },
+    // Grupo L
+    { local: 'Inglaterra',         visit: 'Croacia',             gl: 4, gv: 2 },
+    { local: 'Ghana',              visit: 'Panamá',              gl: 1, gv: 0 },
+  ];
+
+  const client = await pool.connect();
+  let cargados = 0;
+  const errores = [];
+
+  try {
+    for (const r of resultados) {
+      const partido = await prepare(`
+        SELECT p.id, p.estado FROM partidos p
+        JOIN equipos el ON p.equipo_local_id = el.id
+        JOIN equipos ev ON p.equipo_visitante_id = ev.id
+        WHERE el.nombre=$1 AND ev.nombre=$2
+      `).get(r.local, r.visit);
+
+      if (!partido) { errores.push(`No encontrado: ${r.local} vs ${r.visit}`); continue; }
+
+      await client.query('BEGIN');
+
+      if (partido.estado === 'finalizado') {
+        const prons = await client.query('SELECT * FROM pronosticos WHERE partido_id=$1', [partido.id]);
+        for (const pr of prons.rows) {
+          await client.query('UPDATE usuarios SET puntos_total=GREATEST(0,puntos_total-$1) WHERE id=$2', [pr.puntos_obtenidos, pr.usuario_id]);
+          await client.query('UPDATE pronosticos SET puntos_obtenidos=0 WHERE id=$1', [pr.id]);
+        }
+      }
+
+      await client.query('UPDATE partidos SET goles_local=$1,goles_visitante=$2,estado=$3 WHERE id=$4',
+        [r.gl, r.gv, 'finalizado', partido.id]);
+
+      const prons = await client.query('SELECT * FROM pronosticos WHERE partido_id=$1', [partido.id]);
+      for (const pr of prons.rows) {
+        const pts = calcularPuntos(pr.goles_local, pr.goles_visitante, r.gl, r.gv);
+        await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
+        await client.query('UPDATE usuarios SET puntos_total=puntos_total+$1 WHERE id=$2', [pts, pr.usuario_id]);
+      }
+
+      await client.query('COMMIT');
+      cargados++;
+    }
+    res.json({ ok: true, cargados, errores });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.json({ ok: false, msg: e.message });
+  } finally {
+    client.release();
+  }
 });
 
 router.post('/importar-puntos', requireAdmin, async (req, res) => {
