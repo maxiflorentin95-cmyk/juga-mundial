@@ -4,44 +4,41 @@ const { requireLogin } = require('../middleware/auth');
 
 // Paraguay UTC-3 fijo (Ley 7354/2024 – sin horario de verano)
 function estaCerrado(fecha, hora) {
-  const matchTime = new Date(`${fecha}T${hora}:00-03:00`);
-  return new Date() >= matchTime;
+  return new Date() >= new Date(`${fecha}T${hora}:00-03:00`);
 }
 
 router.get('/', requireLogin, async (req, res) => {
   try {
     const uid = req.session.usuario.id;
-    const grupos = ['A','B','C','D','E','F','G','H','I','J','K','L'];
-    const partidosPorGrupo = {};
 
-    for (const g of grupos) {
-      const partidos = await prepare(`
-        SELECT p.*, el.nombre AS local_nombre, el.bandera AS local_bandera, el.nombre_corto AS local_corto,
-               ev.nombre AS visit_nombre, ev.bandera AS visit_bandera, ev.nombre_corto AS visit_corto
-        FROM partidos p
-        JOIN equipos el ON p.equipo_local_id = el.id
-        JOIN equipos ev ON p.equipo_visitante_id = ev.id
-        WHERE p.grupo=$1
-        ORDER BY p.fecha, p.hora
-      `).all(g);
+    // Todos los partidos en orden cronológico
+    const partidos = await prepare(`
+      SELECT p.*, el.nombre AS local_nombre, el.bandera AS local_bandera, el.nombre_corto AS local_corto,
+             ev.nombre AS visit_nombre, ev.bandera AS visit_bandera, ev.nombre_corto AS visit_corto
+      FROM partidos p
+      JOIN equipos el ON p.equipo_local_id = el.id
+      JOIN equipos ev ON p.equipo_visitante_id = ev.id
+      ORDER BY p.fecha, p.hora
+    `).all();
 
-      const ids = partidos.map(p => p.id);
-      let prons = [];
-      if (ids.length) {
-        const ph = ids.map((_, i) => `$${i + 2}`).join(',');
-        prons = await prepare(
-          `SELECT * FROM pronosticos WHERE usuario_id=$1 AND partido_id IN (${ph})`
-        ).all(uid, ...ids);
-      }
-      const pronMap = {};
-      prons.forEach(p => (pronMap[p.partido_id] = p));
+    // Todos los pronósticos del usuario en un solo query
+    const prons = await prepare('SELECT * FROM pronosticos WHERE usuario_id=$1').all(uid);
+    const pronMap = {};
+    prons.forEach(p => (pronMap[p.partido_id] = p));
 
-      partidosPorGrupo[g] = partidos.map(p => ({
-        ...p,
-        cerrado: estaCerrado(p.fecha, p.hora),
-        pronostico: pronMap[p.id] || null
-      }));
-    }
+    const lista = partidos.map(p => ({
+      ...p,
+      cerrado: estaCerrado(p.fecha, p.hora),
+      pronostico: pronMap[p.id] || null
+    }));
+
+    // Agrupar por fecha para headers visuales
+    const porFecha = {};
+    lista.forEach(p => {
+      if (!porFecha[p.fecha]) porFecha[p.fecha] = [];
+      porFecha[p.fecha].push(p);
+    });
+    const fechas = Object.keys(porFecha).sort();
 
     const stats = await prepare(`
       SELECT
@@ -52,7 +49,10 @@ router.get('/', requireLogin, async (req, res) => {
       FROM pronosticos WHERE usuario_id=$1
     `).get(uid);
 
-    res.render('pronosticos', { title: 'Mis Pronósticos', grupos, partidosPorGrupo, stats });
+    const totalPartidos = partidos.length;
+    const pronósticados = prons.length;
+
+    res.render('pronosticos', { title: 'Mis Pronósticos', fechas, porFecha, stats, totalPartidos, pronosticados: pronósticados });
   } catch (e) { console.error(e); res.status(500).send('Error'); }
 });
 
@@ -78,7 +78,7 @@ router.post('/guardar', requireLogin, async (req, res) => {
         updated_at=NOW()
     `).run(uid, partido_id, gl, gv);
 
-    res.json({ ok: true, msg: '¡Pronóstico guardado!' });
+    res.json({ ok: true, msg: 'Guardado', gl, gv });
   } catch (e) {
     console.error(e);
     res.json({ ok: false, msg: 'Error del servidor' });

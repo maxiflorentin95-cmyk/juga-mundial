@@ -4,188 +4,199 @@
   <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-left"></i> Volver
   </a>
-  <h2 class="fw-bold mb-0">Mis Pronósticos</h2>
+  <div>
+    <h2 class="fw-bold mb-0">Mis Pronósticos</h2>
+    <div class="text-muted small"><%= pronosticados %> / <%= totalPartidos %> cargados</div>
+  </div>
 </div>
 
 <!-- Estadísticas -->
 <% if (stats && stats.total > 0) { %>
-<div class="row g-2 mb-4">
+<div class="row g-2 mb-3">
   <div class="col-6 col-md-3">
-    <div class="card border-0 bg-primary bg-opacity-10 border-primary text-center py-2">
+    <div class="card border-0 bg-primary bg-opacity-10 text-center py-2">
       <div class="fw-bold fs-4 text-primary"><%= stats.puntos || 0 %></div>
       <div class="small text-muted">Puntos</div>
     </div>
   </div>
   <div class="col-6 col-md-3">
-    <div class="card border-0 bg-warning bg-opacity-10 border-warning text-center py-2">
+    <div class="card border-0 bg-warning bg-opacity-10 text-center py-2">
       <div class="fw-bold fs-4 text-warning"><%= stats.exactos || 0 %></div>
       <div class="small text-muted">Exactos 🎯</div>
     </div>
   </div>
   <div class="col-6 col-md-3">
-    <div class="card border-0 bg-success bg-opacity-10 border-success text-center py-2">
+    <div class="card border-0 bg-success bg-opacity-10 text-center py-2">
       <div class="fw-bold fs-4 text-success"><%= stats.resultado || 0 %></div>
-      <div class="small text-muted">Resultado ✓</div>
+      <div class="small text-muted">Con resultado ✓</div>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="card border-0 bg-secondary bg-opacity-10 text-center py-2">
       <div class="fw-bold fs-4"><%= stats.total %></div>
-      <div class="small text-muted">Pronósticos</div>
+      <div class="small text-muted">Cargados</div>
     </div>
   </div>
 </div>
 <% } %>
 
 <!-- Sistema de puntos -->
-<div class="alert alert-info py-2 small mb-4">
+<div class="alert alert-info py-2 small mb-3 d-flex align-items-center flex-wrap gap-2">
   <i class="bi bi-info-circle-fill me-1"></i>
-  <strong>Puntos:</strong> Exacto = <span class="badge bg-warning text-dark">5 pts</span> &nbsp;
-  Diferencia correcta = <span class="badge bg-success">3 pts</span> &nbsp;
-  Ganador correcto = <span class="badge bg-primary">2 pts</span> &nbsp;
-  Fallado = <span class="badge bg-secondary">0 pts</span>
-  &nbsp;· Cierre al <strong>inicio</strong> del partido.
+  <strong>Puntaje:</strong>
+  <span class="badge bg-warning text-dark">🎯 Exacto = 5 pts</span>
+  <span class="badge bg-success">≈ Diferencia = 3 pts</span>
+  <span class="badge bg-primary">✓ Ganador = 2 pts</span>
+  <span class="badge bg-secondary">✗ Fallado = 0 pts</span>
+  <span class="text-muted ms-1">· Cierre al inicio del partido. Podés modificar hasta ese momento.</span>
 </div>
 
-<!-- Tabs por grupo -->
-<ul class="nav nav-tabs flex-nowrap overflow-auto mb-3" id="grupoTabs" role="tablist" style="scrollbar-width:thin">
-  <% grupos.forEach((g, i) => { %>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link <%= i===0 ? 'active' : '' %> text-nowrap" data-bs-toggle="tab" data-bs-target="#grupo-<%= g %>">
-      Grupo <%= g %>
-    </button>
-  </li>
-  <% }) %>
-</ul>
+<!-- Lista cronológica por fecha -->
+<% fechas.forEach(fecha => { %>
+<%
+  const dateObj = new Date(fecha + 'T12:00:00Z');
+  const labelFecha = dateObj.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
+  const partidos = porFecha[fecha];
+  const hayAbiertos = partidos.some(p => !p.cerrado);
+%>
 
-<div class="tab-content" id="grupoTabsContent">
-  <% grupos.forEach((g, i) => { %>
-  <div class="tab-pane fade <%= i===0 ? 'show active' : '' %>" id="grupo-<%= g %>">
-    <div class="row g-3">
-      <% partidosPorGrupo[g].forEach(p => { %>
-      <div class="col-12 col-md-6 col-xl-4">
-        <div class="card border-0 shadow-sm h-100 partido-card" data-id="<%= p.id %>">
-          <!-- Header del partido -->
-          <div class="card-header py-2 <%= p.cerrado ? 'bg-secondary text-white' : 'bg-primary text-white' %>">
-            <div class="d-flex justify-content-between align-items-center">
-              <small>
-                <i class="bi bi-calendar3 me-1"></i>
-                <%= new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}) %>
-                · <%= p.hora %> PY
-              </small>
-              <span class="badge <%= p.estado === 'finalizado' ? 'bg-success' : p.cerrado ? 'bg-danger' : 'bg-light text-dark' %>">
-                <%= p.estado === 'finalizado' ? 'Finalizado' : p.cerrado ? 'Cerrado' : 'Abierto' %>
-              </span>
-            </div>
+<div class="mb-4">
+  <!-- Header de fecha -->
+  <div class="d-flex align-items-center gap-2 mb-2">
+    <span class="badge bg-dark px-3 py-2 fs-6 text-capitalize"><%= labelFecha %></span>
+    <% if (hayAbiertos) { %>
+    <span class="badge bg-success">Abiertos</span>
+    <% } %>
+    <hr class="flex-grow-1 my-0 border-secondary opacity-25">
+  </div>
+
+  <!-- Partidos del día -->
+  <div class="card border-0 shadow-sm overflow-hidden">
+    <% partidos.forEach((p, idx) => { %>
+    <div class="partido-row partido-card p-3 <%= idx > 0 ? 'border-top' : '' %>" data-id="<%= p.id %>"
+         style="<%= p.estado==='finalizado' ? 'background:var(--bs-success-bg-subtle,#d1e7dd)10' : '' %>">
+
+      <!-- Fila principal: hora · equipos · estado -->
+      <div class="d-flex align-items-center gap-2 gap-md-3 flex-wrap">
+
+        <!-- Hora + grupo -->
+        <div class="text-center" style="min-width:52px">
+          <div class="fw-bold small lh-1"><%= p.hora %></div>
+          <div class="text-muted" style="font-size:.65rem">Gr. <%= p.grupo %></div>
+        </div>
+
+        <!-- Equipos y marcador/VS -->
+        <div class="d-flex align-items-center flex-grow-1 gap-1 gap-md-2">
+          <!-- Local -->
+          <div class="d-flex align-items-center gap-1 flex-grow-1 justify-content-end">
+            <span class="fw-semibold small text-end" style="max-width:90px;line-height:1.2"><%= p.local_corto %></span>
+            <span class="fs-4 lh-1"><%= p.local_bandera %></span>
           </div>
 
-          <div class="card-body">
-            <!-- Equipos -->
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <div class="text-center flex-grow-1">
-                <div class="fs-2"><%= p.local_bandera %></div>
-                <div class="fw-bold small"><%= p.local_nombre %></div>
-              </div>
-              <div class="text-center px-2">
-                <% if (p.estado === 'finalizado') { %>
-                  <span class="badge bg-dark fs-5 px-3 py-2">
-                    <%= p.goles_local %> – <%= p.goles_visitante %>
-                  </span>
-                  <div class="text-muted small mt-1">Resultado final</div>
-                <% } else { %>
-                  <span class="text-muted fw-bold">VS</span>
-                <% } %>
-              </div>
-              <div class="text-center flex-grow-1">
-                <div class="fs-2"><%= p.visit_bandera %></div>
-                <div class="fw-bold small"><%= p.visit_nombre %></div>
-              </div>
-            </div>
-
-            <!-- Pronóstico -->
-            <div class="pronóstico-section">
-              <% if (p.estado === 'finalizado' && p.pronostico) { %>
-                <!-- Cerrado con pronóstico -->
-                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
-                  <div class="text-center">
-                    <div class="text-muted small">Tu pronóstico</div>
-                    <div class="badge bg-dark fs-6 px-3 py-1">
-                      <%= p.pronostico.goles_local %> – <%= p.pronostico.goles_visitante %>
-                    </div>
-                  </div>
-                  <div class="text-center">
-                    <div class="text-muted small">Puntos</div>
-                    <span class="badge fs-6 px-3 py-1
-                      <%= p.pronostico.puntos_obtenidos === 5 ? 'bg-warning text-dark' :
-                          p.pronostico.puntos_obtenidos === 3 ? 'bg-success' :
-                          p.pronostico.puntos_obtenidos === 2 ? 'bg-primary' : 'bg-secondary' %>">
-                      +<%= p.pronostico.puntos_obtenidos %>
-                    </span>
-                  </div>
-                </div>
-              <% } else if (p.estado === 'finalizado' && !p.pronostico) { %>
-                <div class="text-center text-muted small">No pronosticaste este partido</div>
-              <% } else if (p.cerrado && p.pronostico) { %>
-                <!-- Cerrado, tiene pronóstico -->
-                <div class="text-center">
-                  <div class="text-muted small mb-1">Tu pronóstico (cerrado)</div>
-                  <span class="badge bg-dark fs-6 px-3 py-1">
-                    <%= p.pronostico.goles_local %> – <%= p.pronostico.goles_visitante %>
-                  </span>
-                </div>
-              <% } else if (p.cerrado && !p.pronostico) { %>
-                <div class="text-center text-muted small">Cerrado sin pronóstico</div>
-              <% } else { %>
-                <!-- Abierto para pronosticar -->
-                <div class="input-pron">
-                  <label class="form-label small fw-bold text-center d-block mb-2">
-                    <%= p.pronostico ? 'Modificar pronóstico' : 'Tu pronóstico' %>
-                  </label>
-                  <div class="d-flex align-items-center justify-content-center gap-2">
-                    <input type="number" class="form-control form-control-sm text-center fw-bold pron-local"
-                      min="0" max="20" style="width:60px"
-                      value="<%= p.pronostico ? p.pronostico.goles_local : '' %>"
-                      placeholder="0">
-                    <span class="fw-bold text-muted">–</span>
-                    <input type="number" class="form-control form-control-sm text-center fw-bold pron-visit"
-                      min="0" max="20" style="width:60px"
-                      value="<%= p.pronostico ? p.pronostico.goles_visitante : '' %>"
-                      placeholder="0">
-                  </div>
-                  <button class="btn btn-primary btn-sm w-100 mt-2 btn-guardar"
-                    data-id="<%= p.id %>">
-                    <i class="bi bi-save me-1"></i>
-                    <%= p.pronostico ? 'Actualizar' : 'Guardar' %>
-                  </button>
-                  <div class="msg-pron small text-center mt-1"></div>
-                </div>
-              <% } %>
-            </div>
+          <!-- Resultado o VS -->
+          <div class="text-center px-1" style="min-width:56px">
+            <% if (p.estado === 'finalizado') { %>
+              <span class="badge bg-dark px-2 py-1 fw-bold"><%= p.goles_local %>–<%= p.goles_visitante %></span>
+            <% } else { %>
+              <span class="text-muted fw-bold small">vs</span>
+            <% } %>
           </div>
 
-          <div class="card-footer bg-transparent text-muted small py-1">
-            <i class="bi bi-geo-alt"></i> <%= p.estadio %>
+          <!-- Visitante -->
+          <div class="d-flex align-items-center gap-1 flex-grow-1">
+            <span class="fs-4 lh-1"><%= p.visit_bandera %></span>
+            <span class="fw-semibold small" style="max-width:90px;line-height:1.2"><%= p.visit_corto %></span>
           </div>
         </div>
+
+        <!-- Estado badge -->
+        <div class="ms-auto">
+          <span class="badge <%= p.estado==='finalizado' ? 'bg-success' : p.cerrado ? 'bg-secondary' : 'bg-primary' %> text-nowrap">
+            <%= p.estado==='finalizado' ? 'Final' : p.cerrado ? 'Cerrado' : 'Abierto' %>
+          </span>
+        </div>
       </div>
-      <% }) %>
+
+      <!-- Fila de pronóstico -->
+      <div class="mt-2 ms-0 ms-md-5 ps-md-3">
+        <% if (p.estado === 'finalizado') { %>
+          <!-- Finalizado: mostrar pronóstico y puntos -->
+          <% if (p.pronostico) { %>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="text-muted small">Tu pronóstico:</span>
+            <span class="badge bg-dark px-2 py-1"><%= p.pronostico.goles_local %>–<%= p.pronostico.goles_visitante %></span>
+            <span class="badge px-2 py-1
+              <%= p.pronostico.puntos_obtenidos===5 ? 'bg-warning text-dark' :
+                  p.pronostico.puntos_obtenidos===3 ? 'bg-success' :
+                  p.pronostico.puntos_obtenidos===2 ? 'bg-primary' : 'bg-secondary' %>">
+              <%= p.pronostico.puntos_obtenidos===5 ? '🎯' : p.pronostico.puntos_obtenidos===3 ? '≈' : p.pronostico.puntos_obtenidos===2 ? '✓' : '✗' %>
+              +<%= p.pronostico.puntos_obtenidos %> pts
+            </span>
+          </div>
+          <% } else { %>
+          <span class="text-muted small fst-italic">No pronosticaste este partido</span>
+          <% } %>
+
+        <% } else if (p.cerrado) { %>
+          <!-- Cerrado, en juego -->
+          <% if (p.pronostico) { %>
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">Tu pronóstico:</span>
+            <span class="badge bg-dark px-2 py-1"><%= p.pronostico.goles_local %>–<%= p.pronostico.goles_visitante %></span>
+            <span class="text-muted small"><i class="bi bi-lock-fill"></i> cerrado</span>
+          </div>
+          <% } else { %>
+          <span class="text-muted small fst-italic"><i class="bi bi-lock-fill"></i> No pronosticaste este partido</span>
+          <% } %>
+
+        <% } else { %>
+          <!-- Abierto: formulario editable -->
+          <div class="d-flex align-items-center gap-2 flex-wrap input-pron">
+            <% if (p.pronostico) { %>
+            <span class="badge bg-success-subtle text-success border border-success-subtle small px-2">
+              <i class="bi bi-check2 me-1"></i>Cargado
+            </span>
+            <% } %>
+            <div class="d-flex align-items-center gap-1">
+              <span class="text-muted small text-nowrap"><%= p.local_corto %>:</span>
+              <input type="number" class="form-control form-control-sm text-center fw-bold pron-local"
+                min="0" max="20" style="width:52px"
+                value="<%= p.pronostico ? p.pronostico.goles_local : '' %>"
+                placeholder="0">
+              <span class="fw-bold text-muted">–</span>
+              <input type="number" class="form-control form-control-sm text-center fw-bold pron-visit"
+                min="0" max="20" style="width:52px"
+                value="<%= p.pronostico ? p.pronostico.goles_visitante : '' %>"
+                placeholder="0">
+              <span class="text-muted small text-nowrap">:<%= p.visit_corto %></span>
+            </div>
+            <button class="btn btn-sm btn-guardar <%= p.pronostico ? 'btn-outline-primary' : 'btn-primary' %>"
+              data-id="<%= p.id %>" data-local="<%= p.local_corto %>" data-visit="<%= p.visit_corto %>">
+              <i class="bi bi-save me-1"></i><%= p.pronostico ? 'Actualizar' : 'Guardar' %>
+            </button>
+            <span class="msg-pron small"></span>
+          </div>
+        <% } %>
+      </div>
+
     </div>
+    <% }) %>
   </div>
-  <% }) %>
 </div>
+<% }) %>
 
 <script>
 document.querySelectorAll('.btn-guardar').forEach(btn => {
   btn.addEventListener('click', async function () {
-    const card = this.closest('.partido-card');
+    const row = this.closest('.partido-card');
     const id = this.dataset.id;
-    const gl = card.querySelector('.pron-local').value;
-    const gv = card.querySelector('.pron-visit').value;
-    const msg = card.querySelector('.msg-pron');
+    const gl = row.querySelector('.pron-local').value;
+    const gv = row.querySelector('.pron-visit').value;
+    const msg = row.querySelector('.msg-pron');
 
     if (gl === '' || gv === '') {
       msg.textContent = 'Ingresá ambos goles';
-      msg.className = 'msg-pron small text-center mt-1 text-danger';
+      msg.className = 'msg-pron small text-danger';
       return;
     }
 
@@ -199,20 +210,49 @@ document.querySelectorAll('.btn-guardar').forEach(btn => {
         body: JSON.stringify({ partido_id: id, goles_local: gl, goles_visitante: gv })
       });
       const data = await res.json();
-      msg.textContent = data.msg;
-      msg.className = 'msg-pron small text-center mt-1 ' + (data.ok ? 'text-success' : 'text-danger');
+
       if (data.ok) {
-        this.innerHTML = '<i class="bi bi-check2 me-1"></i>Guardado';
-        this.classList.replace('btn-primary', 'btn-success');
+        // Mostrar badge "Cargado" si no existe
+        const inputPron = row.querySelector('.input-pron');
+        let badge = inputPron.querySelector('.badge-cargado');
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'badge bg-success-subtle text-success border border-success-subtle small px-2 badge-cargado';
+          badge.innerHTML = '<i class="bi bi-check2 me-1"></i>Cargado';
+          inputPron.prepend(badge);
+        }
+        // Actualizar valores del input con lo que se guardó
+        row.querySelector('.pron-local').value = data.gl;
+        row.querySelector('.pron-visit').value = data.gv;
+        // Mensaje breve que desaparece
+        msg.textContent = '✓ Guardado';
+        msg.className = 'msg-pron small text-success';
+        setTimeout(() => { msg.textContent = ''; }, 2500);
+        // Botón vuelve a ser editable
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-save me-1"></i>Actualizar';
+        this.className = 'btn btn-sm btn-guardar btn-outline-primary';
       } else {
+        msg.textContent = data.msg;
+        msg.className = 'msg-pron small text-danger';
         this.disabled = false;
         this.innerHTML = '<i class="bi bi-save me-1"></i>Guardar';
       }
     } catch (e) {
       msg.textContent = 'Error de red';
-      msg.className = 'msg-pron small text-center mt-1 text-danger';
+      msg.className = 'msg-pron small text-danger';
       this.disabled = false;
       this.innerHTML = '<i class="bi bi-save me-1"></i>Guardar';
+    }
+  });
+});
+
+// Enter en inputs para guardar rápido
+document.querySelectorAll('.pron-local, .pron-visit').forEach(input => {
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const card = this.closest('.partido-card');
+      card.querySelector('.btn-guardar')?.click();
     }
   });
 });
