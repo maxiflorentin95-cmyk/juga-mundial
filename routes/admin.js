@@ -101,6 +101,21 @@ router.post('/resultado', requireAdmin, async (req, res) => {
   }
 });
 
+router.post('/resetear-passwords', requireAdmin, async (req, res) => {
+  try {
+    const usuarios = await prepare('SELECT id, username FROM usuarios').all();
+    let actualizados = 0;
+    for (const u of usuarios) {
+      const hash = await bcrypt.hash(u.username + '2026', 10);
+      await prepare('UPDATE usuarios SET password=$1 WHERE id=$2').run(hash, u.id);
+      actualizados++;
+    }
+    res.json({ ok: true, msg: `Contraseñas reseteadas para ${actualizados} usuarios` });
+  } catch (e) {
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
 router.post('/resetear', requireAdmin, async (req, res) => {
   const client = await pool.connect();
   try {
