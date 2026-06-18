@@ -146,6 +146,7 @@ router.post('/importar-puntos', requireAdmin, async (req, res) => {
     { username: 'HugoLoup',    pts: 23 },
     { username: 'JoeAlca',     pts: 17 },
     { username: 'Luisma',      pts: 0  },
+    { username: 'Loche',       pts: 10 },
   ];
   const resultados = [];
   for (const u of puntos) {
