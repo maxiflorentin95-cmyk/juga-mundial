@@ -159,101 +159,107 @@ router.post('/importar-historico', requireAdmin, async (req, res) => {
       {u:'JoeAlca',gl:1,gv:2},{u:'JulioMarti',gl:1,gv:1},{u:'Ronaldraf',gl:1,gv:2},
       {u:'Chebis',gl:1,gv:1},{u:'Loche',gl:1,gv:1}]},
     // Suiza vs Catar en DB; el sistema viejo tenía "Catar vs Suiza" → pronósticos flipeados
+    // Loche: "catar 0 - suiza 1" → flip → Suiza 1, Catar 0 → gl=1, gv=0
     { local:'Suiza',           visit:'Catar',              gl:1, gv:1, prons:[
       {u:'Ronaldraf',gl:2,gv:2},{u:'Chrisis',gl:2,gv:0},{u:'Ortepro18',gl:2,gv:1},
       {u:'Ferfre',gl:2,gv:0},{u:'MrPomberoPY',gl:2,gv:0},{u:'HugoLoup',gl:3,gv:0},
       {u:'JoeAlca',gl:3,gv:1},{u:'JulioMarti',gl:2,gv:0},{u:'mfiorentin',gl:2,gv:0},
-      {u:'Chebis',gl:2,gv:0}]},
+      {u:'Chebis',gl:2,gv:0},{u:'Loche',gl:1,gv:0}]},
     { local:'Brasil',          visit:'Marruecos',          gl:1, gv:1, prons:[
       {u:'Chrisis',gl:1,gv:1},{u:'Ortepro18',gl:2,gv:2},{u:'MrPomberoPY',gl:2,gv:2},
       {u:'Ferfre',gl:2,gv:1},{u:'HugoLoup',gl:3,gv:1},{u:'JoeAlca',gl:2,gv:1},
       {u:'JulioMarti',gl:2,gv:1},{u:'mfiorentin',gl:3,gv:1},{u:'Ronaldraf',gl:2,gv:1},
-      {u:'Chebis',gl:2,gv:1}]},
+      {u:'Chebis',gl:2,gv:1},{u:'Loche',gl:2,gv:1}]},
     { local:'Haití',           visit:'Escocia',            gl:0, gv:1, prons:[
       {u:'Chrisis',gl:0,gv:3},{u:'Ferfre',gl:0,gv:2},{u:'MrPomberoPY',gl:0,gv:3},
       {u:'HugoLoup',gl:0,gv:4},{u:'JulioMarti',gl:0,gv:2},{u:'mfiorentin',gl:1,gv:2},
-      {u:'Ronaldraf',gl:0,gv:2},{u:'Chebis',gl:0,gv:2},{u:'Ortepro18',gl:0,gv:0}]},
+      {u:'Ronaldraf',gl:0,gv:2},{u:'Chebis',gl:0,gv:2},{u:'Ortepro18',gl:0,gv:0},
+      {u:'Loche',gl:0,gv:2}]},
     { local:'Australia',       visit:'Turquía',            gl:2, gv:0, prons:[
       {u:'Chrisis',gl:0,gv:2},{u:'Ortepro18',gl:0,gv:2},{u:'Ferfre',gl:1,gv:2},
       {u:'MrPomberoPY',gl:0,gv:3},{u:'HugoLoup',gl:0,gv:2},{u:'JulioMarti',gl:0,gv:2},
-      {u:'mfiorentin',gl:0,gv:2},{u:'Ronaldraf',gl:1,gv:2},{u:'Chebis',gl:0,gv:2}]},
+      {u:'mfiorentin',gl:0,gv:2},{u:'Ronaldraf',gl:1,gv:2},{u:'Chebis',gl:0,gv:2},
+      {u:'Loche',gl:0,gv:1}]},
     { local:'Alemania',        visit:'Curazao',            gl:7, gv:1, prons:[
       {u:'Chrisis',gl:3,gv:0},{u:'Ortepro18',gl:8,gv:1},{u:'Ferfre',gl:4,gv:0},
       {u:'MrPomberoPY',gl:7,gv:0},{u:'HugoLoup',gl:5,gv:0},{u:'JulioMarti',gl:4,gv:0},
-      {u:'mfiorentin',gl:4,gv:0},{u:'Ronaldraf',gl:4,gv:0},{u:'Chebis',gl:4,gv:0}]},
+      {u:'mfiorentin',gl:4,gv:0},{u:'Ronaldraf',gl:4,gv:0},{u:'Chebis',gl:4,gv:0},
+      {u:'Loche',gl:2,gv:0}]},
     { local:'Países Bajos',    visit:'Japón',              gl:2, gv:2, prons:[
       {u:'MrPomberoPY',gl:1,gv:1},{u:'JulioMarti',gl:1,gv:1},{u:'Ronaldraf',gl:0,gv:0},
       {u:'Chebis',gl:1,gv:1},{u:'Chrisis',gl:2,gv:0},{u:'Ortepro18',gl:1,gv:2},
-      {u:'Ferfre',gl:2,gv:0},{u:'HugoLoup',gl:1,gv:2},{u:'mfiorentin',gl:2,gv:1}]},
+      {u:'Ferfre',gl:2,gv:0},{u:'HugoLoup',gl:1,gv:2},{u:'mfiorentin',gl:2,gv:1},
+      {u:'Loche',gl:1,gv:1}]},
     { local:'Costa de Marfil', visit:'Ecuador',            gl:1, gv:0, prons:[
       {u:'Ronaldraf',gl:3,gv:2},{u:'Chrisis',gl:1,gv:1},{u:'Ortepro18',gl:2,gv:3},
       {u:'Ferfre',gl:2,gv:2},{u:'MrPomberoPY',gl:1,gv:1},{u:'HugoLoup',gl:0,gv:1},
       {u:'JoeAlca',gl:0,gv:1},{u:'JulioMarti',gl:0,gv:2},{u:'mfiorentin',gl:1,gv:2},
-      {u:'Chebis',gl:0,gv:1}]},
+      {u:'Chebis',gl:0,gv:1},{u:'Loche',gl:0,gv:1}]},
     { local:'Suecia',          visit:'Túnez',              gl:5, gv:1, prons:[
       {u:'Chrisis',gl:2,gv:1},{u:'Ortepro18',gl:2,gv:0},{u:'Ferfre',gl:2,gv:1},
       {u:'MrPomberoPY',gl:1,gv:0},{u:'HugoLoup',gl:2,gv:0},{u:'JoeAlca',gl:2,gv:0},
       {u:'JulioMarti',gl:2,gv:0},{u:'mfiorentin',gl:1,gv:0},{u:'Ronaldraf',gl:0,gv:2},
-      {u:'Chebis',gl:1,gv:1}]},
+      {u:'Chebis',gl:1,gv:1},{u:'Loche',gl:1,gv:0}]},
     { local:'España',          visit:'Cabo Verde',         gl:0, gv:0, prons:[
       {u:'Chrisis',gl:3,gv:0},{u:'Ortepro18',gl:4,gv:1},{u:'Ferfre',gl:5,gv:0},
       {u:'MrPomberoPY',gl:4,gv:1},{u:'HugoLoup',gl:6,gv:0},{u:'JoeAlca',gl:4,gv:0},
       {u:'JulioMarti',gl:4,gv:0},{u:'mfiorentin',gl:5,gv:0},{u:'Ronaldraf',gl:5,gv:0},
-      {u:'Chebis',gl:4,gv:0}]},
+      {u:'Chebis',gl:4,gv:0},{u:'Loche',gl:2,gv:0}]},
     { local:'Bélgica',         visit:'Egipto',             gl:1, gv:1, prons:[
       {u:'Chrisis',gl:1,gv:1},{u:'mfiorentin',gl:2,gv:2},{u:'Ortepro18',gl:1,gv:2},
       {u:'Ferfre',gl:2,gv:1},{u:'MrPomberoPY',gl:3,gv:1},{u:'HugoLoup',gl:3,gv:1},
       {u:'JoeAlca',gl:3,gv:1},{u:'JulioMarti',gl:2,gv:0},{u:'Ronaldraf',gl:1,gv:3},
-      {u:'Chebis',gl:2,gv:1}]},
+      {u:'Chebis',gl:2,gv:1},{u:'Loche',gl:2,gv:0}]},
     { local:'Arabia Saudita',  visit:'Uruguay',            gl:1, gv:1, prons:[
       {u:'Chrisis',gl:1,gv:1},{u:'mfiorentin',gl:1,gv:1},{u:'Ortepro18',gl:1,gv:2},
       {u:'Ferfre',gl:0,gv:1},{u:'MrPomberoPY',gl:2,gv:0},{u:'HugoLoup',gl:0,gv:1},
       {u:'JoeAlca',gl:0,gv:1},{u:'JulioMarti',gl:1,gv:2},{u:'Ronaldraf',gl:1,gv:2},
-      {u:'Chebis',gl:1,gv:2}]},
+      {u:'Chebis',gl:1,gv:2},{u:'Loche',gl:0,gv:1}]},
     { local:'Irán',            visit:'Nueva Zelanda',      gl:2, gv:2, prons:[
       {u:'mfiorentin',gl:2,gv:2},{u:'Chrisis',gl:1,gv:1},{u:'HugoLoup',gl:0,gv:0},
       {u:'JulioMarti',gl:1,gv:1},{u:'Ronaldraf',gl:1,gv:1},{u:'Chebis',gl:1,gv:1},
       {u:'Ortepro18',gl:0,gv:2},{u:'Ferfre',gl:2,gv:0},{u:'MrPomberoPY',gl:1,gv:0},
-      {u:'JoeAlca',gl:2,gv:0}]},
+      {u:'JoeAlca',gl:2,gv:0},{u:'Loche',gl:1,gv:1}]},
     { local:'Francia',         visit:'Senegal',            gl:3, gv:1, prons:[
       {u:'Ortepro18',gl:3,gv:1},{u:'Ferfre',gl:3,gv:1},{u:'JoeAlca',gl:3,gv:1},
       {u:'JulioMarti',gl:3,gv:1},{u:'mfiorentin',gl:3,gv:1},{u:'Chebis',gl:3,gv:1},
       {u:'Chrisis',gl:3,gv:0},{u:'Ronaldraf',gl:2,gv:0},{u:'MrPomberoPY',gl:2,gv:2},
-      {u:'HugoLoup',gl:0,gv:1}]},
+      {u:'HugoLoup',gl:0,gv:1},{u:'Loche',gl:2,gv:0}]},
     { local:'Irak',            visit:'Noruega',            gl:1, gv:4, prons:[
       {u:'Ortepro18',gl:1,gv:4},{u:'Chrisis',gl:0,gv:2},{u:'Ferfre',gl:0,gv:2},
       {u:'MrPomberoPY',gl:0,gv:2},{u:'HugoLoup',gl:0,gv:4},{u:'JoeAlca',gl:0,gv:2},
       {u:'JulioMarti',gl:1,gv:3},{u:'mfiorentin',gl:1,gv:3},{u:'Ronaldraf',gl:0,gv:1},
-      {u:'Chebis',gl:0,gv:2}]},
+      {u:'Chebis',gl:0,gv:2},{u:'Loche',gl:0,gv:2}]},
     { local:'Argentina',       visit:'Argelia',            gl:3, gv:0, prons:[
       {u:'MrPomberoPY',gl:3,gv:0},{u:'Chrisis',gl:2,gv:0},{u:'Ortepro18',gl:2,gv:0},
       {u:'Ferfre',gl:3,gv:1},{u:'HugoLoup',gl:2,gv:0},{u:'JoeAlca',gl:2,gv:1},
       {u:'JulioMarti',gl:2,gv:0},{u:'mfiorentin',gl:2,gv:0},{u:'Ronaldraf',gl:3,gv:1},
-      {u:'Chebis',gl:2,gv:1}]},
+      {u:'Chebis',gl:2,gv:1},{u:'Loche',gl:2,gv:0}]},
     { local:'Austria',         visit:'Jordania',           gl:3, gv:1, prons:[
       {u:'Ortepro18',gl:3,gv:1},{u:'Chrisis',gl:1,gv:0},{u:'Ferfre',gl:2,gv:0},
       {u:'MrPomberoPY',gl:2,gv:0},{u:'HugoLoup',gl:3,gv:0},{u:'JulioMarti',gl:1,gv:0},
       {u:'Ronaldraf',gl:2,gv:1},{u:'Chebis',gl:1,gv:0},{u:'JoeAlca',gl:2,gv:2},
-      {u:'mfiorentin',gl:1,gv:1}]},
+      {u:'mfiorentin',gl:1,gv:1},{u:'Loche',gl:1,gv:0}]},
     { local:'Portugal',        visit:'Rep. Dem. Congo',    gl:1, gv:1, prons:[
       {u:'Chrisis',gl:3,gv:0},{u:'Ortepro18',gl:3,gv:1},{u:'Ferfre',gl:3,gv:0},
       {u:'MrPomberoPY',gl:3,gv:0},{u:'HugoLoup',gl:3,gv:0},{u:'JoeAlca',gl:3,gv:1},
       {u:'JulioMarti',gl:3,gv:0},{u:'mfiorentin',gl:4,gv:0},{u:'Ronaldraf',gl:3,gv:0},
-      {u:'Chebis',gl:3,gv:1}]},
+      {u:'Chebis',gl:3,gv:1},{u:'Loche',gl:3,gv:0}]},
     { local:'Inglaterra',      visit:'Croacia',            gl:4, gv:2, prons:[
       {u:'Chrisis',gl:2,gv:0},{u:'Ferfre',gl:2,gv:1},{u:'MrPomberoPY',gl:2,gv:1},
       {u:'HugoLoup',gl:3,gv:1},{u:'JoeAlca',gl:2,gv:1},{u:'JulioMarti',gl:2,gv:1},
       {u:'Ortepro18',gl:2,gv:2},{u:'mfiorentin',gl:1,gv:1},{u:'Ronaldraf',gl:1,gv:2},
-      {u:'Chebis',gl:1,gv:1}]},
+      {u:'Chebis',gl:1,gv:1},{u:'Loche',gl:2,gv:1}]},
     { local:'Ghana',           visit:'Panamá',             gl:1, gv:0, prons:[
       {u:'HugoLoup',gl:1,gv:0},{u:'Chrisis',gl:3,gv:1},{u:'Ortepro18',gl:3,gv:0},
       {u:'JoeAlca',gl:2,gv:1},{u:'JulioMarti',gl:2,gv:1},{u:'mfiorentin',gl:2,gv:1},
-      {u:'Ronaldraf',gl:2,gv:0},{u:'Chebis',gl:2,gv:1},{u:'Ferfre',gl:1,gv:1}]},
+      {u:'Ronaldraf',gl:2,gv:0},{u:'Chebis',gl:2,gv:1},{u:'Ferfre',gl:1,gv:1},
+      {u:'Loche',gl:2,gv:0}]},
     { local:'Uzbekistán',      visit:'Colombia',           gl:1, gv:3, prons:[
       {u:'Ferfre',gl:1,gv:3},{u:'mfiorentin',gl:1,gv:3},{u:'Ronaldraf',gl:1,gv:3},
       {u:'Chebis',gl:1,gv:3},{u:'Chrisis',gl:0,gv:2},{u:'Ortepro18',gl:1,gv:4},
       {u:'MrPomberoPY',gl:0,gv:2},{u:'HugoLoup',gl:0,gv:2},{u:'JoeAlca',gl:0,gv:2},
-      {u:'JulioMarti',gl:0,gv:2}]},
+      {u:'JulioMarti',gl:0,gv:2},{u:'Loche',gl:0,gv:2}]},
   ];
 
   const client = await pool.connect();
