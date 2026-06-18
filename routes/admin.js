@@ -249,6 +249,11 @@ router.post('/importar-historico', requireAdmin, async (req, res) => {
       {u:'HugoLoup',gl:1,gv:0},{u:'Chrisis',gl:3,gv:1},{u:'Ortepro18',gl:3,gv:0},
       {u:'JoeAlca',gl:2,gv:1},{u:'JulioMarti',gl:2,gv:1},{u:'mfiorentin',gl:2,gv:1},
       {u:'Ronaldraf',gl:2,gv:0},{u:'Chebis',gl:2,gv:1},{u:'Ferfre',gl:1,gv:1}]},
+    { local:'Uzbekistán',      visit:'Colombia',           gl:1, gv:3, prons:[
+      {u:'Ferfre',gl:1,gv:3},{u:'mfiorentin',gl:1,gv:3},{u:'Ronaldraf',gl:1,gv:3},
+      {u:'Chebis',gl:1,gv:3},{u:'Chrisis',gl:0,gv:2},{u:'Ortepro18',gl:1,gv:4},
+      {u:'MrPomberoPY',gl:0,gv:2},{u:'HugoLoup',gl:0,gv:2},{u:'JoeAlca',gl:0,gv:2},
+      {u:'JulioMarti',gl:0,gv:2}]},
   ];
 
   const client = await pool.connect();
