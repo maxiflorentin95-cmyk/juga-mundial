@@ -47,8 +47,8 @@ router.get('/', requireLogin, async (req, res) => {
     const stats = await prepare(`
       SELECT
         COUNT(*) AS total,
-        SUM(CASE WHEN puntos_obtenidos=3 THEN 1 ELSE 0 END) AS exactos,
-        SUM(CASE WHEN puntos_obtenidos=1 THEN 1 ELSE 0 END) AS resultado,
+        SUM(CASE WHEN puntos_obtenidos=5 THEN 1 ELSE 0 END) AS exactos,
+        SUM(CASE WHEN puntos_obtenidos>=2 THEN 1 ELSE 0 END) AS resultado,
         SUM(puntos_obtenidos) AS puntos
       FROM pronosticos WHERE usuario_id=$1
     `).get(uid);

@@ -116,8 +116,9 @@
                   <div class="text-center">
                     <div class="text-muted small">Puntos</div>
                     <span class="badge fs-6 px-3 py-1
-                      <%= p.pronostico.puntos_obtenidos === 3 ? 'bg-warning text-dark' :
-                          p.pronostico.puntos_obtenidos === 1 ? 'bg-primary' : 'bg-secondary' %>">
+                      <%= p.pronostico.puntos_obtenidos === 5 ? 'bg-warning text-dark' :
+                          p.pronostico.puntos_obtenidos === 3 ? 'bg-success' :
+                          p.pronostico.puntos_obtenidos === 2 ? 'bg-primary' : 'bg-secondary' %>">
                       +<%= p.pronostico.puntos_obtenidos %>
                     </span>
                   </div>

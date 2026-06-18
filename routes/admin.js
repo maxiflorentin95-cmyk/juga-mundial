@@ -134,6 +134,172 @@ router.get('/usuarios', requireAdmin, async (req, res) => {
   } catch (e) { res.status(500).send('Error'); }
 });
 
+router.post('/importar-historico', requireAdmin, async (req, res) => {
+  // mflorentin en el sistema viejo = mfiorentin en nuestra DB
+  const umap = { 'mflorentin': 'mfiorentin' };
+  const u = (n) => umap[n] || n;
+
+  // local/visit según nuestra DB; para Suiza vs Catar (viejo sistema tenía Catar como local → flipeamos)
+  const historial = [
+    { local:'México',          visit:'Sudáfrica',         gl:2, gv:0, prons:[
+      {u:'MrPomberoPY',gl:2,gv:1},{u:'mfiorentin',gl:2,gv:1},{u:'Loche',gl:1,gv:0}]},
+    { local:'Corea del Sur',   visit:'Chequia',            gl:2, gv:1, prons:[
+      {u:'Ronaldraf',gl:3,gv:1},{u:'Chrisis',gl:2,gv:2},{u:'Ortepro18',gl:0,gv:2},
+      {u:'Ferfre',gl:1,gv:1},{u:'MrPomberoPY',gl:1,gv:1},{u:'HugoLoup',gl:1,gv:1},
+      {u:'JoeAlca',gl:1,gv:1},{u:'JulioMarti',gl:1,gv:1},{u:'mfiorentin',gl:0,gv:0},
+      {u:'Chebis',gl:1,gv:1},{u:'Loche',gl:0,gv:1}]},
+    { local:'Canadá',          visit:'Bosnia-Herzegovina', gl:1, gv:1, prons:[
+      {u:'Ferfre',gl:1,gv:1},{u:'JulioMarti',gl:1,gv:1},{u:'Chebis',gl:1,gv:1},
+      {u:'Ortepro18',gl:3,gv:0},{u:'MrPomberoPY',gl:2,gv:0},{u:'HugoLoup',gl:2,gv:1},
+      {u:'JoeAlca',gl:1,gv:2},{u:'mfiorentin',gl:1,gv:0},{u:'Ronaldraf',gl:3,gv:0},
+      {u:'Loche',gl:1,gv:1}]},
+    { local:'Estados Unidos',  visit:'Paraguay',           gl:4, gv:1, prons:[
+      {u:'Ortepro18',gl:2,gv:1},{u:'mfiorentin',gl:2,gv:1},{u:'Chrisis',gl:1,gv:1},
+      {u:'Ferfre',gl:1,gv:2},{u:'MrPomberoPY',gl:1,gv:2},{u:'HugoLoup',gl:1,gv:2},
+      {u:'JoeAlca',gl:1,gv:2},{u:'JulioMarti',gl:1,gv:1},{u:'Ronaldraf',gl:1,gv:2},
+      {u:'Chebis',gl:1,gv:1},{u:'Loche',gl:1,gv:1}]},
+    // Suiza vs Catar en DB; el sistema viejo tenía "Catar vs Suiza" → pronósticos flipeados
+    { local:'Suiza',           visit:'Catar',              gl:1, gv:1, prons:[
+      {u:'Ronaldraf',gl:2,gv:2},{u:'Chrisis',gl:2,gv:0},{u:'Ortepro18',gl:2,gv:1},
+      {u:'Ferfre',gl:2,gv:0},{u:'MrPomberoPY',gl:2,gv:0},{u:'HugoLoup',gl:3,gv:0},
+      {u:'JoeAlca',gl:3,gv:1},{u:'JulioMarti',gl:2,gv:0},{u:'mfiorentin',gl:2,gv:0},
+      {u:'Chebis',gl:2,gv:0}]},
+    { local:'Brasil',          visit:'Marruecos',          gl:1, gv:1, prons:[
+      {u:'Chrisis',gl:1,gv:1},{u:'Ortepro18',gl:2,gv:2},{u:'MrPomberoPY',gl:2,gv:2},
+      {u:'Ferfre',gl:2,gv:1},{u:'HugoLoup',gl:3,gv:1},{u:'JoeAlca',gl:2,gv:1},
+      {u:'JulioMarti',gl:2,gv:1},{u:'mfiorentin',gl:3,gv:1},{u:'Ronaldraf',gl:2,gv:1},
+      {u:'Chebis',gl:2,gv:1}]},
+    { local:'Haití',           visit:'Escocia',            gl:0, gv:1, prons:[
+      {u:'Chrisis',gl:0,gv:3},{u:'Ferfre',gl:0,gv:2},{u:'MrPomberoPY',gl:0,gv:3},
+      {u:'HugoLoup',gl:0,gv:4},{u:'JulioMarti',gl:0,gv:2},{u:'mfiorentin',gl:1,gv:2},
+      {u:'Ronaldraf',gl:0,gv:2},{u:'Chebis',gl:0,gv:2},{u:'Ortepro18',gl:0,gv:0}]},
+    { local:'Australia',       visit:'Turquía',            gl:2, gv:0, prons:[
+      {u:'Chrisis',gl:0,gv:2},{u:'Ortepro18',gl:0,gv:2},{u:'Ferfre',gl:1,gv:2},
+      {u:'MrPomberoPY',gl:0,gv:3},{u:'HugoLoup',gl:0,gv:2},{u:'JulioMarti',gl:0,gv:2},
+      {u:'mfiorentin',gl:0,gv:2},{u:'Ronaldraf',gl:1,gv:2},{u:'Chebis',gl:0,gv:2}]},
+    { local:'Alemania',        visit:'Curazao',            gl:7, gv:1, prons:[
+      {u:'Chrisis',gl:3,gv:0},{u:'Ortepro18',gl:8,gv:1},{u:'Ferfre',gl:4,gv:0},
+      {u:'MrPomberoPY',gl:7,gv:0},{u:'HugoLoup',gl:5,gv:0},{u:'JulioMarti',gl:4,gv:0},
+      {u:'mfiorentin',gl:4,gv:0},{u:'Ronaldraf',gl:4,gv:0},{u:'Chebis',gl:4,gv:0}]},
+    { local:'Países Bajos',    visit:'Japón',              gl:2, gv:2, prons:[
+      {u:'MrPomberoPY',gl:1,gv:1},{u:'JulioMarti',gl:1,gv:1},{u:'Ronaldraf',gl:0,gv:0},
+      {u:'Chebis',gl:1,gv:1},{u:'Chrisis',gl:2,gv:0},{u:'Ortepro18',gl:1,gv:2},
+      {u:'Ferfre',gl:2,gv:0},{u:'HugoLoup',gl:1,gv:2},{u:'mfiorentin',gl:2,gv:1}]},
+    { local:'Costa de Marfil', visit:'Ecuador',            gl:1, gv:0, prons:[
+      {u:'Ronaldraf',gl:3,gv:2},{u:'Chrisis',gl:1,gv:1},{u:'Ortepro18',gl:2,gv:3},
+      {u:'Ferfre',gl:2,gv:2},{u:'MrPomberoPY',gl:1,gv:1},{u:'HugoLoup',gl:0,gv:1},
+      {u:'JoeAlca',gl:0,gv:1},{u:'JulioMarti',gl:0,gv:2},{u:'mfiorentin',gl:1,gv:2},
+      {u:'Chebis',gl:0,gv:1}]},
+    { local:'Suecia',          visit:'Túnez',              gl:5, gv:1, prons:[
+      {u:'Chrisis',gl:2,gv:1},{u:'Ortepro18',gl:2,gv:0},{u:'Ferfre',gl:2,gv:1},
+      {u:'MrPomberoPY',gl:1,gv:0},{u:'HugoLoup',gl:2,gv:0},{u:'JoeAlca',gl:2,gv:0},
+      {u:'JulioMarti',gl:2,gv:0},{u:'mfiorentin',gl:1,gv:0},{u:'Ronaldraf',gl:0,gv:2},
+      {u:'Chebis',gl:1,gv:1}]},
+    { local:'España',          visit:'Cabo Verde',         gl:0, gv:0, prons:[
+      {u:'Chrisis',gl:3,gv:0},{u:'Ortepro18',gl:4,gv:1},{u:'Ferfre',gl:5,gv:0},
+      {u:'MrPomberoPY',gl:4,gv:1},{u:'HugoLoup',gl:6,gv:0},{u:'JoeAlca',gl:4,gv:0},
+      {u:'JulioMarti',gl:4,gv:0},{u:'mfiorentin',gl:5,gv:0},{u:'Ronaldraf',gl:5,gv:0},
+      {u:'Chebis',gl:4,gv:0}]},
+    { local:'Bélgica',         visit:'Egipto',             gl:1, gv:1, prons:[
+      {u:'Chrisis',gl:1,gv:1},{u:'mfiorentin',gl:2,gv:2},{u:'Ortepro18',gl:1,gv:2},
+      {u:'Ferfre',gl:2,gv:1},{u:'MrPomberoPY',gl:3,gv:1},{u:'HugoLoup',gl:3,gv:1},
+      {u:'JoeAlca',gl:3,gv:1},{u:'JulioMarti',gl:2,gv:0},{u:'Ronaldraf',gl:1,gv:3},
+      {u:'Chebis',gl:2,gv:1}]},
+    { local:'Arabia Saudita',  visit:'Uruguay',            gl:1, gv:1, prons:[
+      {u:'Chrisis',gl:1,gv:1},{u:'mfiorentin',gl:1,gv:1},{u:'Ortepro18',gl:1,gv:2},
+      {u:'Ferfre',gl:0,gv:1},{u:'MrPomberoPY',gl:2,gv:0},{u:'HugoLoup',gl:0,gv:1},
+      {u:'JoeAlca',gl:0,gv:1},{u:'JulioMarti',gl:1,gv:2},{u:'Ronaldraf',gl:1,gv:2},
+      {u:'Chebis',gl:1,gv:2}]},
+    { local:'Irán',            visit:'Nueva Zelanda',      gl:2, gv:2, prons:[
+      {u:'mfiorentin',gl:2,gv:2},{u:'Chrisis',gl:1,gv:1},{u:'HugoLoup',gl:0,gv:0},
+      {u:'JulioMarti',gl:1,gv:1},{u:'Ronaldraf',gl:1,gv:1},{u:'Chebis',gl:1,gv:1},
+      {u:'Ortepro18',gl:0,gv:2},{u:'Ferfre',gl:2,gv:0},{u:'MrPomberoPY',gl:1,gv:0},
+      {u:'JoeAlca',gl:2,gv:0}]},
+    { local:'Francia',         visit:'Senegal',            gl:3, gv:1, prons:[
+      {u:'Ortepro18',gl:3,gv:1},{u:'Ferfre',gl:3,gv:1},{u:'JoeAlca',gl:3,gv:1},
+      {u:'JulioMarti',gl:3,gv:1},{u:'mfiorentin',gl:3,gv:1},{u:'Chebis',gl:3,gv:1},
+      {u:'Chrisis',gl:3,gv:0},{u:'Ronaldraf',gl:2,gv:0},{u:'MrPomberoPY',gl:2,gv:2},
+      {u:'HugoLoup',gl:0,gv:1}]},
+    { local:'Irak',            visit:'Noruega',            gl:1, gv:4, prons:[
+      {u:'Ortepro18',gl:1,gv:4},{u:'Chrisis',gl:0,gv:2},{u:'Ferfre',gl:0,gv:2},
+      {u:'MrPomberoPY',gl:0,gv:2},{u:'HugoLoup',gl:0,gv:4},{u:'JoeAlca',gl:0,gv:2},
+      {u:'JulioMarti',gl:1,gv:3},{u:'mfiorentin',gl:1,gv:3},{u:'Ronaldraf',gl:0,gv:1},
+      {u:'Chebis',gl:0,gv:2}]},
+    { local:'Argentina',       visit:'Argelia',            gl:3, gv:0, prons:[
+      {u:'MrPomberoPY',gl:3,gv:0},{u:'Chrisis',gl:2,gv:0},{u:'Ortepro18',gl:2,gv:0},
+      {u:'Ferfre',gl:3,gv:1},{u:'HugoLoup',gl:2,gv:0},{u:'JoeAlca',gl:2,gv:1},
+      {u:'JulioMarti',gl:2,gv:0},{u:'mfiorentin',gl:2,gv:0},{u:'Ronaldraf',gl:3,gv:1},
+      {u:'Chebis',gl:2,gv:1}]},
+    { local:'Austria',         visit:'Jordania',           gl:3, gv:1, prons:[
+      {u:'Ortepro18',gl:3,gv:1},{u:'Chrisis',gl:1,gv:0},{u:'Ferfre',gl:2,gv:0},
+      {u:'MrPomberoPY',gl:2,gv:0},{u:'HugoLoup',gl:3,gv:0},{u:'JulioMarti',gl:1,gv:0},
+      {u:'Ronaldraf',gl:2,gv:1},{u:'Chebis',gl:1,gv:0},{u:'JoeAlca',gl:2,gv:2},
+      {u:'mfiorentin',gl:1,gv:1}]},
+    { local:'Portugal',        visit:'Rep. Dem. Congo',    gl:1, gv:1, prons:[
+      {u:'Chrisis',gl:3,gv:0},{u:'Ortepro18',gl:3,gv:1},{u:'Ferfre',gl:3,gv:0},
+      {u:'MrPomberoPY',gl:3,gv:0},{u:'HugoLoup',gl:3,gv:0},{u:'JoeAlca',gl:3,gv:1},
+      {u:'JulioMarti',gl:3,gv:0},{u:'mfiorentin',gl:4,gv:0},{u:'Ronaldraf',gl:3,gv:0},
+      {u:'Chebis',gl:3,gv:1}]},
+    { local:'Inglaterra',      visit:'Croacia',            gl:4, gv:2, prons:[
+      {u:'Chrisis',gl:2,gv:0},{u:'Ferfre',gl:2,gv:1},{u:'MrPomberoPY',gl:2,gv:1},
+      {u:'HugoLoup',gl:3,gv:1},{u:'JoeAlca',gl:2,gv:1},{u:'JulioMarti',gl:2,gv:1},
+      {u:'Ortepro18',gl:2,gv:2},{u:'mfiorentin',gl:1,gv:1},{u:'Ronaldraf',gl:1,gv:2},
+      {u:'Chebis',gl:1,gv:1}]},
+    { local:'Ghana',           visit:'Panamá',             gl:1, gv:0, prons:[
+      {u:'HugoLoup',gl:1,gv:0},{u:'Chrisis',gl:3,gv:1},{u:'Ortepro18',gl:3,gv:0},
+      {u:'JoeAlca',gl:2,gv:1},{u:'JulioMarti',gl:2,gv:1},{u:'mfiorentin',gl:2,gv:1},
+      {u:'Ronaldraf',gl:2,gv:0},{u:'Chebis',gl:2,gv:1},{u:'Ferfre',gl:1,gv:1}]},
+  ];
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM pronosticos');
+    await client.query('UPDATE usuarios SET puntos_total = 0');
+
+    let totalProns = 0, errores = [];
+
+    for (const m of historial) {
+      const partido = await prepare(`
+        SELECT p.id FROM partidos p
+        JOIN equipos el ON p.equipo_local_id = el.id
+        JOIN equipos ev ON p.equipo_visitante_id = ev.id
+        WHERE el.nombre=$1 AND ev.nombre=$2
+      `).get(m.local, m.visit);
+
+      if (!partido) { errores.push(`Partido no encontrado: ${m.local} vs ${m.visit}`); continue; }
+
+      await client.query('UPDATE partidos SET goles_local=$1,goles_visitante=$2,estado=$3 WHERE id=$4',
+        [m.gl, m.gv, 'finalizado', partido.id]);
+
+      for (const p of m.prons) {
+        const username = u(p.u);
+        const usr = await prepare('SELECT id FROM usuarios WHERE username=$1').get(username);
+        if (!usr) { errores.push(`Usuario no encontrado: ${username}`); continue; }
+
+        const pts = calcularPuntos(p.gl, p.gv, m.gl, m.gv);
+        await client.query(`
+          INSERT INTO pronosticos (usuario_id, partido_id, goles_local, goles_visitante, puntos_obtenidos)
+          VALUES ($1,$2,$3,$4,$5)
+          ON CONFLICT (usuario_id, partido_id) DO UPDATE
+          SET goles_local=$3, goles_visitante=$4, puntos_obtenidos=$5
+        `, [usr.id, partido.id, p.gl, p.gv, pts]);
+
+        await client.query('UPDATE usuarios SET puntos_total=puntos_total+$1 WHERE id=$2', [pts, usr.id]);
+        totalProns++;
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ ok: true, pronosticos: totalProns, errores });
+  } catch(e) {
+    await client.query('ROLLBACK');
+    res.json({ ok: false, msg: e.message });
+  } finally {
+    client.release();
+  }
+});
+
 router.post('/cargar-resultados-wc26', requireAdmin, async (req, res) => {
   const resultados = [
     // Grupo A

@@ -77,7 +77,7 @@
               <% if (pron) { %>
                 <span class="badge bg-success">✓ <%= pron.goles_local %>–<%= pron.goles_visitante %></span>
                 <% if (p.estado === 'finalizado') { %>
-                  <span class="badge bg-<%= pron.puntos_obtenidos === 3 ? 'warning text-dark' : pron.puntos_obtenidos === 1 ? 'primary' : 'secondary' %> ms-1">
+                  <span class="badge bg-<%= pron.puntos_obtenidos === 5 ? 'warning text-dark' : pron.puntos_obtenidos === 3 ? 'success' : pron.puntos_obtenidos === 2 ? 'primary' : 'secondary' %> ms-1">
                     +<%= pron.puntos_obtenidos %> pts
                   </span>
                 <% } %>
