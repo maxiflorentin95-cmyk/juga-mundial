@@ -38,6 +38,7 @@ router.get('/:username', requireLogin, async (req, res) => {
       JOIN equipos el ON p.equipo_local_id = el.id
       JOIN equipos ev ON p.equipo_visitante_id = ev.id
       WHERE pr.usuario_id = $1
+        AND (p.fecha || 'T' || p.hora || ':00-03:00')::timestamptz <= NOW()
       ORDER BY p.fecha, p.hora
     `).all(user.id);
 
