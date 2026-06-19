@@ -61,7 +61,7 @@ router.get('/', requireLogin, async (req, res) => {
         detalle = {
           ...p,
           cerrado,
-          prons: p.estado === 'finalizado' ? prons : [],  // solo si terminó
+          prons: cerrado ? prons : [],  // revela cuando el partido ya empezó
           total_prons: total,
           sin_cargar: null, // se calcula abajo
           exactos:    prons.filter(x => x.puntos_obtenidos === 5).length,
