@@ -61,6 +61,7 @@ async function start() {
     console.log('🔌 Conectando a base de datos...');
     await initSchema();
     console.log('✅ Schema OK');
+    await require('./routes/trivia').seedTrivia();
 
     // Seed automático si la DB está vacía
     const row = await prepare('SELECT COUNT(*) AS c FROM equipos').get();

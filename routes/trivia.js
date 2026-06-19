@@ -20,7 +20,7 @@ function calcularPuntos(segundos) {
   return 2;
 }
 
-// Seed automático si la tabla está vacía
+// Seed — se llama desde server.js después de initSchema()
 async function seedTrivia() {
   try {
     const count = await prepare('SELECT COUNT(*) AS c FROM trivia_preguntas').get();
@@ -35,7 +35,7 @@ async function seedTrivia() {
     console.log('[trivia] 50 preguntas cargadas');
   } catch (e) { console.error('[trivia] Error seed:', e.message); }
 }
-seedTrivia();
+module.exports.seedTrivia = seedTrivia;
 
 // GET /trivia
 router.get('/', requireLogin, async (req, res) => {
