@@ -110,6 +110,29 @@ async function initSchema() {
       updated_at TIMESTAMP DEFAULT NOW()
     );
     ALTER TABLE pronosticos_especiales ADD COLUMN IF NOT EXISTS puntos_obtenidos INTEGER NOT NULL DEFAULT 0;
+    CREATE TABLE IF NOT EXISTS trivia_preguntas (
+      id SERIAL PRIMARY KEY,
+      orden INTEGER NOT NULL UNIQUE,
+      pregunta TEXT NOT NULL,
+      opcion_a TEXT NOT NULL,
+      opcion_b TEXT NOT NULL,
+      opcion_c TEXT NOT NULL,
+      opcion_d TEXT NOT NULL,
+      correcta TEXT NOT NULL,
+      mundial TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS trivia_respuestas (
+      id SERIAL PRIMARY KEY,
+      usuario_id INTEGER REFERENCES usuarios(id),
+      pregunta_id INTEGER REFERENCES trivia_preguntas(id),
+      respuesta TEXT,
+      correcta BOOLEAN NOT NULL DEFAULT false,
+      segundos_empleados NUMERIC(5,2),
+      puntos INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(usuario_id, pregunta_id)
+    );
     CREATE TABLE IF NOT EXISTS ranking_snapshots (
       id SERIAL PRIMARY KEY,
       usuario_id INTEGER REFERENCES usuarios(id),

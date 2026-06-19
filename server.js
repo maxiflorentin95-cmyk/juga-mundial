@@ -41,6 +41,7 @@ app.use('/historial', require('./routes/historial'));
 app.use('/especiales', require('./routes/especiales'));
 app.use('/perfil', require('./routes/perfil'));
 app.use('/eliminatoria', require('./routes/eliminatoria'));
+app.use('/trivia', require('./routes/trivia'));
 
 // Health check – muestra estado de DB
 app.get('/health', async (req, res) => {
