@@ -35,7 +35,6 @@ async function seedTrivia() {
     console.log('[trivia] 50 preguntas cargadas');
   } catch (e) { console.error('[trivia] Error seed:', e.message); }
 }
-module.exports.seedTrivia = seedTrivia;
 
 // GET /trivia
 router.get('/', requireLogin, async (req, res) => {
@@ -111,3 +110,4 @@ router.post('/responder', requireLogin, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.seedTrivia = seedTrivia;
