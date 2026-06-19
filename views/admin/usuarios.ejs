@@ -1,82 +1,202 @@
 <%- include('../partials/header') %>
 
-<div class="d-flex align-items-center gap-3 mb-4">
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
   <a href="/admin" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left"></i> Volver
+    <i class="bi bi-arrow-left"></i> Admin
   </a>
-  <h2 class="fw-bold mb-0">Gestión de Usuarios</h2>
+  <h2 class="fw-bold mb-0"><i class="bi bi-people-fill text-primary me-2"></i>Gestión de Usuarios</h2>
+  <span class="badge bg-secondary ms-auto"><%= usuarios.length %> usuarios</span>
 </div>
 
-<div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index:9999"></div>
-
 <div class="card border-0 shadow-sm">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-secondary">
-          <tr>
-            <th class="ps-3">#</th>
-            <th>Usuario</th>
-            <th>Email</th>
-            <th class="text-center">Puntos</th>
-            <th class="text-center">Rol</th>
-            <th class="text-center">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% usuarios.forEach(u => { %>
-          <tr>
-            <td class="ps-3 text-muted small"><%= u.id %></td>
-            <td><span class="fw-semibold"><%= u.username %></span></td>
-            <td class="text-muted small"><%= u.email %></td>
-            <td class="text-center fw-bold"><%= u.puntos_total %></td>
-            <td class="text-center">
-              <span class="badge <%= u.es_admin ? 'bg-warning text-dark' : 'bg-secondary' %>">
-                <%= u.es_admin ? 'Admin' : 'Usuario' %>
-              </span>
-            </td>
-            <td class="text-center">
-              <% if (u.id !== usuario.id) { %>
-              <button class="btn btn-sm <%= u.es_admin ? 'btn-outline-danger' : 'btn-outline-success' %> btn-toggle-admin"
-                data-id="<%= u.id %>" data-admin="<%= u.es_admin %>">
-                <%= u.es_admin ? 'Quitar admin' : 'Hacer admin' %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th class="ps-3" style="width:36px">#</th>
+          <th>Usuario</th>
+          <th class="d-none d-md-table-cell">Email</th>
+          <th class="text-center" style="width:60px">Pts</th>
+          <th class="text-center" style="width:60px">Rol</th>
+          <th class="text-center">Contraseña</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% usuarios.forEach((u, i) => { %>
+        <tr>
+          <td class="ps-3 text-muted small"><%= i + 1 %></td>
+
+          <!-- Nombre editable inline -->
+          <td>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <span class="fw-semibold username-label" data-id="<%= u.id %>"><%= u.username %></span>
+              <% if (u.es_admin) { %><span class="badge bg-warning text-dark" style="font-size:.65rem">admin</span><% } %>
+              <button class="btn btn-link btn-sm p-0 text-muted btn-edit-nombre" data-id="<%= u.id %>" title="Renombrar">
+                <i class="bi bi-pencil-fill" style="font-size:.72rem"></i>
               </button>
-              <% } else { %>
-              <span class="badge bg-primary">Tú</span>
-              <% } %>
-            </td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
+            </div>
+            <div class="edit-nombre-form d-none mt-1" data-id="<%= u.id %>">
+              <div class="input-group input-group-sm" style="max-width:210px">
+                <input type="text" class="form-control inp-nombre" data-id="<%= u.id %>" value="<%= u.username %>">
+                <button class="btn btn-success btn-guardar-nombre" data-id="<%= u.id %>"><i class="bi bi-check2"></i></button>
+                <button class="btn btn-outline-secondary btn-cancelar-nombre" data-id="<%= u.id %>"><i class="bi bi-x"></i></button>
+              </div>
+              <div class="msg-nombre small mt-1" data-id="<%= u.id %>"></div>
+            </div>
+          </td>
+
+          <!-- Email -->
+          <td class="d-none d-md-table-cell text-muted small"><%= u.email %></td>
+
+          <!-- Puntos -->
+          <td class="text-center fw-bold text-primary"><%= u.puntos_total %></td>
+
+          <!-- Toggle admin -->
+          <td class="text-center">
+            <button class="btn btn-sm btn-toggle-admin <%= u.es_admin ? 'btn-warning' : 'btn-outline-secondary' %>"
+              data-id="<%= u.id %>" data-es-admin="<%= u.es_admin %>"
+              title="<%= u.es_admin ? 'Quitar admin' : 'Hacer admin' %>">
+              <i class="bi bi-<%= u.es_admin ? 'shield-fill-check' : 'person' %>"></i>
+            </button>
+          </td>
+
+          <!-- Reset contraseña -->
+          <td>
+            <div class="d-flex align-items-center gap-1">
+              <input type="text" class="form-control form-control-sm inp-pwd"
+                data-id="<%= u.id %>" data-username="<%= u.username %>"
+                placeholder="<%= u.username %>2026"
+                style="max-width:140px;font-size:.78rem">
+              <button class="btn btn-sm btn-outline-danger btn-reset-pwd"
+                data-id="<%= u.id %>" data-username="<%= u.username %>"
+                title="Resetear contraseña">
+                <i class="bi bi-key-fill"></i>
+              </button>
+            </div>
+            <div class="msg-pwd small mt-1" data-id="<%= u.id %>"></div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer bg-transparent text-muted small py-2 px-3">
+    <i class="bi bi-info-circle me-1"></i>
+    Contraseña por defecto: <code>usuario + 2026</code> (ej: <code>Chrisis2026</code>).
+    Podés escribir una contraseña personalizada en el campo antes de presionar la llave.
   </div>
 </div>
 
-<script>
-function showToast(msg, ok) {
-  const id = 'toast' + Date.now();
-  const html = `<div id="${id}" class="toast align-items-center text-white border-0 ${ok ? 'bg-success' : 'bg-danger'}" role="alert">
-    <div class="d-flex"><div class="toast-body fw-semibold">${msg}</div>
-    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
-  document.getElementById('toast-container').insertAdjacentHTML('beforeend', html);
-  const el = document.getElementById(id);
-  new bootstrap.Toast(el, { delay: 3000 }).show();
-  el.addEventListener('hidden.bs.toast', () => el.remove());
-}
+<!-- Reset masivo -->
+<div class="mt-3 d-flex align-items-center gap-3 justify-content-end flex-wrap">
+  <div id="msgResetTodos" class="small"></div>
+  <button class="btn btn-outline-danger btn-sm" id="btnResetTodos">
+    <i class="bi bi-key me-1"></i>Resetear TODAS las contraseñas
+  </button>
+</div>
 
-document.querySelectorAll('.btn-toggle-admin').forEach(btn => {
-  btn.addEventListener('click', async function () {
+<script>
+// ── Renombrar ──────────────────────────────────────────────────────
+document.querySelectorAll('.btn-edit-nombre').forEach(btn => {
+  btn.addEventListener('click', function() {
     const id = this.dataset.id;
-    const res = await fetch('/admin/toggle-admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario_id: id })
-    });
-    const data = await res.json();
-    showToast(data.msg, data.ok);
-    if (data.ok) setTimeout(() => location.reload(), 1000);
+    const form = document.querySelector(`.edit-nombre-form[data-id="${id}"]`);
+    form.classList.toggle('d-none');
+    if (!form.classList.contains('d-none'))
+      form.querySelector('.inp-nombre').focus();
   });
+});
+
+document.querySelectorAll('.btn-cancelar-nombre').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelector(`.edit-nombre-form[data-id="${this.dataset.id}"]`).classList.add('d-none');
+  });
+});
+
+document.querySelectorAll('.btn-guardar-nombre').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const id     = this.dataset.id;
+    const nuevo  = document.querySelector(`.inp-nombre[data-id="${id}"]`).value.trim();
+    const label  = document.querySelector(`.username-label[data-id="${id}"]`);
+    const actual = label.textContent.trim();
+    const msg    = document.querySelector(`.msg-nombre[data-id="${id}"]`);
+    if (!nuevo || nuevo === actual) return;
+    try {
+      const r = await fetch('/admin/renombrar-usuario', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ username_actual: actual, username_nuevo: nuevo })
+      }).then(x => x.json());
+      if (r.ok) {
+        label.textContent = nuevo;
+        // Actualizar placeholder del campo de contraseña
+        const pwdInp = document.querySelector(`.inp-pwd[data-id="${id}"]`);
+        if (pwdInp) pwdInp.placeholder = nuevo + '2026';
+        document.querySelector(`.edit-nombre-form[data-id="${id}"]`).classList.add('d-none');
+      } else {
+        msg.innerHTML = `<span class="text-danger">${r.msg}</span>`;
+      }
+    } catch(e) { msg.innerHTML = '<span class="text-danger">Error de red</span>'; }
+  });
+});
+
+// ── Toggle admin ───────────────────────────────────────────────────
+document.querySelectorAll('.btn-toggle-admin').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const id = this.dataset.id;
+    try {
+      const r = await fetch('/admin/toggle-admin', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ usuario_id: id })
+      }).then(x => x.json());
+      if (r.ok) {
+        this.className = 'btn btn-sm btn-toggle-admin ' + (r.es_admin ? 'btn-warning' : 'btn-outline-secondary');
+        this.innerHTML = `<i class="bi bi-${r.es_admin ? 'shield-fill-check' : 'person'}"></i>`;
+        this.title = r.es_admin ? 'Quitar admin' : 'Hacer admin';
+      }
+    } catch(e) {}
+  });
+});
+
+// ── Reset contraseña individual ────────────────────────────────────
+document.querySelectorAll('.btn-reset-pwd').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const id       = this.dataset.id;
+    const username = this.dataset.username;
+    const inp      = document.querySelector(`.inp-pwd[data-id="${id}"]`);
+    const pwd      = inp ? inp.value.trim() : '';
+    const msg      = document.querySelector(`.msg-pwd[data-id="${id}"]`);
+    const display  = pwd || (username + '2026');
+    if (!confirm(`¿Resetear contraseña de "${username}" a:\n${display}?`)) return;
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    try {
+      const r = await fetch('/admin/resetear-password-usuario', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ usuario_id: id, nueva_password: pwd || null })
+      }).then(x => x.json());
+      msg.innerHTML = `<span class="${r.ok ? 'text-success' : 'text-danger'}">${r.ok ? '✓ ' + display : '✗ ' + r.msg}</span>`;
+      if (r.ok && inp) inp.value = '';
+      setTimeout(() => { msg.innerHTML = ''; }, 5000);
+    } catch(e) { msg.innerHTML = '<span class="text-danger">Error</span>'; }
+    this.disabled = false;
+    this.innerHTML = '<i class="bi bi-key-fill"></i>';
+  });
+});
+
+// ── Reset masivo ───────────────────────────────────────────────────
+document.getElementById('btnResetTodos').addEventListener('click', async function() {
+  if (!confirm('¿Resetear la contraseña de TODOS los usuarios a username+2026?')) return;
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Reseteando...';
+  const msg = document.getElementById('msgResetTodos');
+  try {
+    const r = await fetch('/admin/resetear-passwords', { method: 'POST' }).then(x => x.json());
+    msg.innerHTML = r.ok
+      ? `<span class="text-success">✓ ${r.msg}</span>`
+      : `<span class="text-danger">${r.msg}</span>`;
+  } catch(e) { msg.innerHTML = '<span class="text-danger">Error de red</span>'; }
+  this.disabled = false;
+  this.innerHTML = '<i class="bi bi-key me-1"></i>Resetear TODAS las contraseñas';
 });
 </script>
 

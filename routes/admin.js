@@ -353,6 +353,33 @@ router.post('/renombrar-usuario', requireAdmin, async (req, res) => {
   }
 });
 
+// Reset de contraseña individual
+router.post('/resetear-password-usuario', requireAdmin, async (req, res) => {
+  try {
+    const { usuario_id, nueva_password } = req.body;
+    const user = await prepare('SELECT id, username FROM usuarios WHERE id=$1').get(usuario_id);
+    if (!user) return res.json({ ok: false, msg: 'Usuario no encontrado' });
+    const pwd = nueva_password?.trim() || (user.username + '2026');
+    const hash = await bcrypt.hash(pwd, 10);
+    await prepare('UPDATE usuarios SET password_hash=$1 WHERE id=$2').run(hash, user.id);
+    res.json({ ok: true, msg: `✓ Contraseña de "${user.username}" reseteada a: ${pwd}` });
+  } catch (e) { res.json({ ok: false, msg: e.message }); }
+});
+
+// Toggle admin
+router.post('/toggle-admin', requireAdmin, async (req, res) => {
+  try {
+    const { usuario_id } = req.body;
+    if (parseInt(usuario_id) === req.session.usuario.id)
+      return res.json({ ok: false, msg: 'No podés modificar tu propio rol' });
+    const user = await prepare('SELECT id, username, es_admin FROM usuarios WHERE id=$1').get(usuario_id);
+    if (!user) return res.json({ ok: false, msg: 'Usuario no encontrado' });
+    const nuevo = user.es_admin ? 0 : 1;
+    await prepare('UPDATE usuarios SET es_admin=$1 WHERE id=$2').run(nuevo, user.id);
+    res.json({ ok: true, es_admin: nuevo, msg: `"${user.username}" ahora es ${nuevo ? 'admin' : 'usuario normal'}` });
+  } catch (e) { res.json({ ok: false, msg: e.message }); }
+});
+
 router.post('/resetear-passwords', requireAdmin, async (req, res) => {
   try {
     const usuarios = await prepare('SELECT id, username FROM usuarios').all();
@@ -718,18 +745,6 @@ router.post('/reseed', requireAdmin, async (req, res) => {
     console.error(e);
     res.json({ ok: false, msg: e.message });
   }
-});
-
-router.post('/toggle-admin', requireAdmin, async (req, res) => {
-  try {
-    const { usuario_id } = req.body;
-    if (parseInt(usuario_id) === req.session.usuario.id)
-      return res.json({ ok: false, msg: 'No podés modificar tu propio rol' });
-    const u = await prepare('SELECT * FROM usuarios WHERE id=$1').get(usuario_id);
-    if (!u) return res.json({ ok: false, msg: 'Usuario no encontrado' });
-    await prepare('UPDATE usuarios SET es_admin=$1 WHERE id=$2').run(u.es_admin ? 0 : 1, usuario_id);
-    res.json({ ok: true, msg: u.es_admin ? 'Admin removido' : 'Admin asignado' });
-  } catch (e) { res.json({ ok: false, msg: 'Error' }); }
 });
 
 module.exports = router;

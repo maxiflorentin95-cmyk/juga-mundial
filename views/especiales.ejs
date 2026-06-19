@@ -16,7 +16,7 @@
   <i class="bi bi-lock-fill fs-5"></i>
   <div>
     <strong>Plazo cerrado.</strong>
-    Los pronósticos especiales cerraron el 18 de junio a las 23:59 hs (Paraguay).
+    Los pronósticos especiales cerraron el 19 de junio a las 13:00 hs (Paraguay).
     <% if (distribucion) { %>A continuación podés ver cómo votó el grupo.<% } %>
   </div>
 </div>
@@ -25,7 +25,7 @@
   <i class="bi bi-clock-fill fs-5"></i>
   <div>
     <strong>¡Último momento!</strong>
-    Cierre hoy <strong>18 de junio a las 23:59 hs</strong> (hora Paraguay).
+    Cierre hoy <strong>19 de junio a las 13:00 hs</strong> (hora Paraguay).
     Podés cambiar tus pronósticos hasta ese momento.
   </div>
 </div>
@@ -81,16 +81,29 @@
         <div class="msg-especial-<%= slot.tipo %> small text-center mt-2"></div>
 
         <% } else { %>
-        <% if (miosMap[slot.tipo]) { %>
-        <div class="p-3 rounded bg-warning bg-opacity-10 border border-warning text-center mb-3">
-          <div class="text-muted small mb-1">Tu pronóstico</div>
-          <div class="fw-bold fs-6">
-            <% const eq = equipos.find(e => e.nombre === miosMap[slot.tipo]); %>
-            <%= eq ? eq.bandera : '' %> <%= miosMap[slot.tipo] %>
+        <% if (resultados[slot.tipo]) { %>
+          <div class="mb-2 p-2 rounded bg-success bg-opacity-10 border border-success text-center">
+            <div class="small text-muted mb-1">Resultado real</div>
+            <% const eqReal = equipos.find(e => e.nombre === resultados[slot.tipo]); %>
+            <div class="fw-bold"><%= eqReal ? eqReal.bandera + ' ' : '' %><%= resultados[slot.tipo] %></div>
           </div>
-        </div>
+        <% } %>
+        <% if (miosMap[slot.tipo]) { %>
+          <% const acerto = resultados[slot.tipo] && miosMap[slot.tipo] === resultados[slot.tipo]; %>
+          <div class="p-2 rounded text-center mb-2 <%= acerto ? 'bg-success bg-opacity-25 border border-success' : 'bg-warning bg-opacity-10 border border-warning' %>">
+            <div class="text-muted small mb-1">Tu pronóstico</div>
+            <% const eq = equipos.find(e => e.nombre === miosMap[slot.tipo]); %>
+            <div class="fw-bold fs-6"><%= eq ? eq.bandera + ' ' : '' %><%= miosMap[slot.tipo] %></div>
+            <% if (resultados[slot.tipo]) { %>
+              <% if (acerto) { %>
+                <span class="badge bg-success mt-1">+<%= puntosEspeciales[slot.tipo] %> pts ✓</span>
+              <% } else { %>
+                <span class="badge bg-secondary mt-1">0 pts</span>
+              <% } %>
+            <% } %>
+          </div>
         <% } else { %>
-        <div class="text-muted small fst-italic mb-3">No cargaste pronóstico</div>
+          <div class="text-muted small fst-italic mb-3">No cargaste pronóstico</div>
         <% } %>
         <% } %>
 
@@ -162,13 +175,27 @@
         <div class="msg-especial-goleador small text-center mt-2"></div>
 
         <% } else { %>
+        <% if (resultados.goleador) { %>
+          <div class="mb-2 p-2 rounded bg-success bg-opacity-10 border border-success text-center">
+            <div class="small text-muted mb-1">Resultado real</div>
+            <div class="fw-bold"><i class="bi bi-lightning-charge-fill text-danger me-1"></i><%= resultados.goleador %></div>
+          </div>
+        <% } %>
         <% if (miosMap.goleador) { %>
-        <div class="p-3 rounded bg-danger bg-opacity-10 border border-danger text-center mb-3">
-          <div class="text-muted small mb-1">Tu pronóstico</div>
-          <div class="fw-bold fs-5"><i class="bi bi-lightning-charge-fill text-danger me-1"></i><%= miosMap.goleador %></div>
-        </div>
+          <% const acertoG = resultados.goleador && miosMap.goleador.toLowerCase() === resultados.goleador.toLowerCase(); %>
+          <div class="p-2 rounded text-center mb-2 <%= acertoG ? 'bg-success bg-opacity-25 border border-success' : 'bg-danger bg-opacity-10 border border-danger' %>">
+            <div class="text-muted small mb-1">Tu pronóstico</div>
+            <div class="fw-bold fs-5"><i class="bi bi-lightning-charge-fill text-danger me-1"></i><%= miosMap.goleador %></div>
+            <% if (resultados.goleador) { %>
+              <% if (acertoG) { %>
+                <span class="badge bg-success mt-1">+<%= puntosEspeciales.goleador %> pts ✓</span>
+              <% } else { %>
+                <span class="badge bg-secondary mt-1">0 pts</span>
+              <% } %>
+            <% } %>
+          </div>
         <% } else { %>
-        <div class="text-muted small fst-italic mb-3">No cargaste pronóstico de goleador</div>
+          <div class="text-muted small fst-italic mb-3">No cargaste pronóstico de goleador</div>
         <% } %>
         <% } %>
 
@@ -216,13 +243,27 @@
         </button>
         <div class="msg-especial-mvp small text-center mt-2"></div>
         <% } else { %>
+        <% if (resultados.mvp) { %>
+          <div class="mb-2 p-2 rounded bg-success bg-opacity-10 border border-success text-center">
+            <div class="small text-muted mb-1">Resultado real</div>
+            <div class="fw-bold">🌟 <%= resultados.mvp %></div>
+          </div>
+        <% } %>
         <% if (miosMap.mvp) { %>
-        <div class="p-3 rounded text-center mb-3" style="background:#6f42c120;border:1px solid #6f42c1">
-          <div class="text-muted small mb-1">Tu pronóstico</div>
-          <div class="fw-bold fs-5">🌟 <%= miosMap.mvp %></div>
-        </div>
+          <% const acertoM = resultados.mvp && miosMap.mvp.toLowerCase() === resultados.mvp.toLowerCase(); %>
+          <div class="p-2 rounded text-center mb-2 <%= acertoM ? 'bg-success bg-opacity-25 border border-success' : '' %>" style="<%= acertoM ? '' : 'background:#6f42c120;border:1px solid #6f42c1' %>">
+            <div class="text-muted small mb-1">Tu pronóstico</div>
+            <div class="fw-bold fs-5">🌟 <%= miosMap.mvp %></div>
+            <% if (resultados.mvp) { %>
+              <% if (acertoM) { %>
+                <span class="badge bg-success mt-1">+<%= puntosEspeciales.mvp %> pts ✓</span>
+              <% } else { %>
+                <span class="badge bg-secondary mt-1">0 pts</span>
+              <% } %>
+            <% } %>
+          </div>
         <% } else { %>
-        <div class="text-muted small fst-italic mb-3">No cargaste pronóstico de MVP</div>
+          <div class="text-muted small fst-italic mb-3">No cargaste pronóstico de MVP</div>
         <% } %>
         <% if (distribucion && distribucion.mvp && distribucion.mvp.length > 0) { %>
         <hr class="my-2">
@@ -262,15 +303,28 @@
           { tipo:'tercero', label:'🥉 3er puesto' },
           { tipo:'goleador', label:'⚽ Goleador' },
           { tipo:'mvp', label:'🌟 MVP' },
-        ].forEach(s => { %>
+        ].forEach(s => {
+          const resReal = resultados[s.tipo];
+          const miVal   = miosMap[s.tipo];
+          const acerto  = resReal && miVal && miVal.toLowerCase() === resReal.toLowerCase();
+        %>
         <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary">
           <span class="small text-secondary"><%= s.label %></span>
-          <% if (miosMap[s.tipo]) { %>
-            <% const eqR = equipos.find(e => e.nombre === miosMap[s.tipo]); %>
-            <span class="fw-semibold small"><%= eqR ? eqR.bandera + ' ' : '' %><%= miosMap[s.tipo] %></span>
-          <% } else { %>
-            <span class="text-secondary small fst-italic">Sin cargar</span>
-          <% } %>
+          <div class="d-flex align-items-center gap-2">
+            <% if (miVal) { %>
+              <% const eqR = equipos.find(e => e.nombre === miVal); %>
+              <span class="fw-semibold small"><%= eqR ? eqR.bandera + ' ' : '' %><%= miVal %></span>
+              <% if (resReal) { %>
+                <% if (acerto) { %>
+                  <span class="badge bg-success" style="font-size:.65rem">+<%= puntosEspeciales[s.tipo] %></span>
+                <% } else { %>
+                  <span class="badge bg-secondary" style="font-size:.65rem">0</span>
+                <% } %>
+              <% } %>
+            <% } else { %>
+              <span class="text-secondary small fst-italic">Sin cargar</span>
+            <% } %>
+          </div>
         </div>
         <% }) %>
       </div>

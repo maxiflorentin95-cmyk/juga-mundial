@@ -133,6 +133,78 @@
     </div>
   </div>
 
+  <!-- Resultados especiales -->
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-warning text-dark fw-bold">
+        <i class="bi bi-stars me-2"></i>Cargar resultados especiales (Podio / Goleador / MVP)
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Cargá el resultado real de cada categoría. Al guardar se asignan los puntos automáticamente.<br>
+          <strong>Puntos:</strong> Campeón 10 · 2do 8 · 3er 5 · Goleador 10 · MVP 10
+        </p>
+        <div class="row g-2">
+          <% [
+            { tipo:'campeon',  label:'🥇 Campeón',        placeholder:'Ej: Argentina',   esEquipo:true },
+            { tipo:'segundo',  label:'🥈 2do puesto',      placeholder:'Ej: Francia',     esEquipo:true },
+            { tipo:'tercero',  label:'🥉 3er puesto',      placeholder:'Ej: Marruecos',   esEquipo:true },
+            { tipo:'goleador', label:'⚽ Goleador',        placeholder:'Ej: Kylian Mbappé', esEquipo:false },
+            { tipo:'mvp',      label:'🌟 MVP del torneo',  placeholder:'Ej: Vinicius Jr.', esEquipo:false },
+          ].forEach(e => { %>
+          <div class="col-12 col-sm-6 col-lg-4">
+            <label class="form-label small fw-semibold mb-1"><%= e.label %></label>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control inp-res-especial"
+                id="res-<%= e.tipo %>" data-tipo="<%= e.tipo %>"
+                placeholder="<%= e.placeholder %>" autocomplete="off">
+              <button class="btn btn-warning btn-guardar-res-especial" data-tipo="<%= e.tipo %>">
+                <i class="bi bi-check2-circle"></i>
+              </button>
+            </div>
+            <div class="msg-res-especial small mt-1" id="msg-res-<%= e.tipo %>"></div>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Normalizar especiales -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-info text-dark fw-bold">
+        <i class="bi bi-pencil-square me-2"></i>Unificar valor de pronóstico especial
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">Corregí variantes de escritura (ej: todas las formas de "Mbappé" → "Kylian Mbappé"). Usa búsqueda parcial sin distinguir mayúsculas.</p>
+        <div class="row g-2">
+          <div class="col-12 col-sm-4">
+            <select class="form-select form-select-sm" id="norm-tipo">
+              <option value="goleador">⚽ Goleador</option>
+              <option value="mvp">🌟 MVP</option>
+              <option value="campeon">🥇 Campeón</option>
+              <option value="segundo">🥈 2do puesto</option>
+              <option value="tercero">🥉 3er puesto</option>
+            </select>
+          </div>
+          <div class="col-12 col-sm-4">
+            <input type="text" id="norm-patron" class="form-control form-control-sm" placeholder="Patrón (ej: mbappe)">
+          </div>
+          <div class="col-12 col-sm-4">
+            <input type="text" id="norm-nuevo" class="form-control form-control-sm" placeholder="Valor correcto (ej: Kylian Mbappé)">
+          </div>
+          <div class="col-12">
+            <button class="btn btn-info btn-sm" id="btn-normalizar">
+              <i class="bi bi-arrow-repeat me-1"></i>Unificar
+            </button>
+            <span id="msg-normalizar" class="small ms-2"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Limpiar partido -->
   <div class="col-12 col-md-6">
     <div class="card border-0 shadow-sm border-danger">
@@ -386,6 +458,45 @@ document.getElementById('btnRenombrar').addEventListener('click', async function
   } catch(e) { msg.innerHTML = `<div class="alert alert-danger py-2">Error de red</div>`; }
   this.disabled = false;
   this.innerHTML = '<i class="bi bi-check2 me-1"></i>Renombrar';
+});
+// Normalizar especiales
+document.getElementById('btn-normalizar').addEventListener('click', async function() {
+  const tipo      = document.getElementById('norm-tipo').value;
+  const patron    = document.getElementById('norm-patron').value.trim();
+  const valor_nuevo = document.getElementById('norm-nuevo').value.trim();
+  const msg       = document.getElementById('msg-normalizar');
+  if (!patron || !valor_nuevo) { msg.innerHTML = '<span class="text-danger">Completá patrón y valor nuevo</span>'; return; }
+  this.disabled = true;
+  try {
+    const r = await fetch('/especiales/normalizar', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ tipo, patron, valor_nuevo })
+    }).then(x => x.json());
+    msg.innerHTML = `<span class="${r.ok ? 'text-success' : 'text-danger'}">${r.msg}</span>`;
+  } catch(e) { msg.innerHTML = '<span class="text-danger">Error de red</span>'; }
+  this.disabled = false;
+});
+
+// Resultados especiales
+document.querySelectorAll('.btn-guardar-res-especial').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const tipo  = this.dataset.tipo;
+    const valor = document.getElementById('res-' + tipo).value.trim();
+    const msg   = document.getElementById('msg-res-' + tipo);
+    if (!valor) { msg.innerHTML = '<span class="text-danger">Ingresá el valor</span>'; return; }
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    try {
+      const r = await fetch('/especiales/resultado', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ tipo, valor })
+      }).then(x => x.json());
+      msg.innerHTML = `<span class="${r.ok ? 'text-success' : 'text-danger'}">${r.msg}</span>`;
+      setTimeout(() => { msg.innerHTML = ''; }, 6000);
+    } catch(e) { msg.innerHTML = '<span class="text-danger">Error de red</span>'; }
+    this.disabled = false;
+    this.innerHTML = '<i class="bi bi-check2-circle"></i>';
+  });
 });
 </script>
 

@@ -99,10 +99,17 @@ async function initSchema() {
       usuario_id INTEGER REFERENCES usuarios(id),
       tipo TEXT NOT NULL,
       valor TEXT NOT NULL,
+      puntos_obtenidos INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW(),
       UNIQUE(usuario_id, tipo)
     );
+    CREATE TABLE IF NOT EXISTS resultados_especiales (
+      tipo TEXT PRIMARY KEY,
+      valor TEXT NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+    ALTER TABLE pronosticos_especiales ADD COLUMN IF NOT EXISTS puntos_obtenidos INTEGER NOT NULL DEFAULT 0;
   `);
 }
 
