@@ -33,11 +33,41 @@ router.get('/', requireLogin, async (req, res) => {
       }
     } catch (_) {}
 
-    // Inyectar variacion de posicion en cada fila
+    // Rachas históricas: aciertos consecutivos máximos por usuario
+    const partidosOrdenados = await prepare(
+      `SELECT id FROM partidos WHERE estado='finalizado' ORDER BY fecha, hora`
+    ).all();
+    const todasPreds = await prepare(`
+      SELECT pr.usuario_id, pr.partido_id, pr.puntos_obtenidos
+      FROM pronosticos pr
+      JOIN partidos p ON pr.partido_id = p.id
+      WHERE p.estado = 'finalizado'
+    `).all();
+    const predMap = {};
+    todasPreds.forEach(pr => {
+      if (!predMap[pr.usuario_id]) predMap[pr.usuario_id] = {};
+      predMap[pr.usuario_id][pr.partido_id] = parseInt(pr.puntos_obtenidos);
+    });
+    const rachaMap = {};
+    for (const [uid2, preds] of Object.entries(predMap)) {
+      let streakActual = 0, streakMax = 0;
+      for (const p of partidosOrdenados) {
+        if (preds[p.id] !== undefined) {
+          if (preds[p.id] > 0) { streakActual++; streakMax = Math.max(streakMax, streakActual); }
+          else streakActual = 0;
+        }
+      }
+      rachaMap[parseInt(uid2)] = { streakMax, streakActual };
+    }
+
+    // Inyectar variacion de posicion y racha en cada fila
     ranking.forEach((u, i) => {
       const posActual = i + 1;
       const posAnterior = snapMap[u.id];
       u.variacion = posAnterior != null ? posAnterior - posActual : null;
+      const r = rachaMap[u.id] || { streakMax: 0, streakActual: 0 };
+      u.racha_max    = r.streakMax;
+      u.racha_actual = r.streakActual;
     });
 
     const miPos = ranking.findIndex(u => u.id === uid) + 1;

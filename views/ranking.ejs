@@ -71,6 +71,7 @@
             <th class="text-center">🎯</th>
             <th class="text-center d-none d-sm-table-cell">≈</th>
             <th class="text-center d-none d-md-table-cell">✓</th>
+            <th class="text-center d-none d-md-table-cell" title="Mejor racha histórica de aciertos consecutivos">⚡ Racha</th>
             <th class="text-center fw-bold">Pts</th>
           </tr>
         </thead>
@@ -120,6 +121,16 @@
             </td>
             <td class="text-center d-none d-md-table-cell">
               <span class="badge bg-primary"><%= u.resultado %></span>
+            </td>
+            <td class="text-center d-none d-md-table-cell">
+              <% if (u.racha_max > 0) { %>
+                <span class="fw-bold" style="color:#6f42c1">⚡<%= u.racha_max %></span>
+                <% if (u.racha_actual > 0 && u.racha_actual === u.racha_max) { %>
+                  <span class="badge ms-1" style="background:#6f42c1;font-size:.6rem">activa</span>
+                <% } %>
+              <% } else { %>
+                <span class="text-muted">—</span>
+              <% } %>
             </td>
             <td class="text-center fw-bold fs-6 text-<%= i===0 ? 'warning' : i===1 ? 'secondary' : i===2 ? 'danger' : 'dark' %>">
               <%= u.puntos_total %>
