@@ -55,23 +55,23 @@
 </div>
 <% } %>
 
-<!-- Tabla completa -->
-<div class="card border-0 shadow-sm">
+<!-- Tabla completa — desktop -->
+<div class="card border-0 shadow-sm d-none d-md-block">
   <div class="card-header bg-dark text-white fw-bold py-2">
     <i class="bi bi-list-ol me-2"></i>Tabla General
   </div>
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-hover mb-0 align-middle ranking-table">
+      <table class="table table-hover mb-0 align-middle">
         <thead class="table-secondary">
           <tr>
-            <th class="ps-3" style="width:40px">#</th>
+            <th class="ps-3" style="width:44px">#</th>
             <th>Jugador</th>
-            <th class="text-center d-none d-sm-table-cell">Pronóst.</th>
-            <th class="text-center">🎯</th>
-            <th class="text-center d-none d-sm-table-cell">≈</th>
-            <th class="text-center d-none d-md-table-cell">✓</th>
-            <th class="text-center d-none d-md-table-cell" title="Mejor racha histórica de aciertos consecutivos">⚡ Racha</th>
+            <th class="text-center">Pronóst.</th>
+            <th class="text-center" title="Exactos (5 pts)">🎯</th>
+            <th class="text-center" title="Diferencia (3 pts)">≈</th>
+            <th class="text-center" title="Resultado (2 pts)">✓</th>
+            <th class="text-center" title="Mejor racha histórica">⚡ Racha</th>
             <th class="text-center fw-bold">Pts</th>
           </tr>
         </thead>
@@ -79,67 +79,88 @@
           <% ranking.forEach((u, i) => { %>
           <tr class="<%= u.id === uid ? 'table-primary' : '' %>">
             <td class="ps-3">
-              <% if (i === 0) { %><span class="fs-5">🥇</span>
-              <% } else if (i === 1) { %><span class="fs-5">🥈</span>
-              <% } else if (i === 2) { %><span class="fs-5">🥉</span>
-              <% } else { %><span class="text-muted fw-bold small"><%= i+1 %></span>
-              <% } %>
+              <% if (i===0) { %>🥇<% } else if (i===1) { %>🥈<% } else if (i===2) { %>🥉
+              <% } else { %><span class="text-muted fw-bold small"><%= i+1 %></span><% } %>
             </td>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <a href="/perfil/<%= u.username %>" class="text-decoration-none">
-                  <span class="fw-<%= u.id === uid ? 'bold text-primary' : 'semibold' %> ranking-nombre">
-                    <%= u.username %>
-                  </span>
-                </a>
-                <% if (u.id === uid) { %>
-                  <span class="badge bg-primary d-none d-sm-inline">vos</span>
-                <% } %>
+                <a href="/perfil/<%= u.username %>" class="text-decoration-none fw-semibold <%= u.id===uid ? 'text-primary' : 'text-dark' %>"><%= u.username %></a>
+                <% if (u.id===uid) { %><span class="badge bg-primary" style="font-size:.65rem">vos</span><% } %>
                 <% if (u.variacion !== null) { %>
-                  <% if (u.variacion > 0) { %>
-                    <span class="text-success small fw-bold" title="Subió <%= u.variacion %> posición(es)">
-                      <i class="bi bi-caret-up-fill"></i>+<%= u.variacion %>
-                    </span>
-                  <% } else if (u.variacion < 0) { %>
-                    <span class="text-danger small fw-bold" title="Bajó <%= Math.abs(u.variacion) %> posición(es)">
-                      <i class="bi bi-caret-down-fill"></i><%= u.variacion %>
-                    </span>
-                  <% } else { %>
-                    <span class="text-muted small" title="Sin cambios">
-                      <i class="bi bi-dash"></i>
-                    </span>
-                  <% } %>
+                  <% if (u.variacion > 0) { %><span class="text-success small fw-bold"><i class="bi bi-caret-up-fill"></i>+<%= u.variacion %></span>
+                  <% } else if (u.variacion < 0) { %><span class="text-danger small fw-bold"><i class="bi bi-caret-down-fill"></i><%= u.variacion %></span>
+                  <% } else { %><span class="text-muted small"><i class="bi bi-dash"></i></span><% } %>
                 <% } %>
               </div>
             </td>
-            <td class="text-center text-muted small d-none d-sm-table-cell"><%= u.total_pron %></td>
+            <td class="text-center text-muted small"><%= u.total_pron %></td>
+            <td class="text-center"><span class="badge bg-warning text-dark"><%= u.exactos %></span></td>
+            <td class="text-center"><span class="badge bg-success"><%= u.diferencia %></span></td>
+            <td class="text-center"><span class="badge bg-primary"><%= u.resultado %></span></td>
             <td class="text-center">
-              <span class="badge bg-warning text-dark"><%= u.exactos %></span>
-            </td>
-            <td class="text-center d-none d-sm-table-cell">
-              <span class="badge bg-success"><%= u.diferencia %></span>
-            </td>
-            <td class="text-center d-none d-md-table-cell">
-              <span class="badge bg-primary"><%= u.resultado %></span>
-            </td>
-            <td class="text-center d-none d-md-table-cell">
               <% if (u.racha_max > 0) { %>
                 <span class="fw-bold" style="color:#6f42c1">⚡<%= u.racha_max %></span>
-                <% if (u.racha_actual > 0 && u.racha_actual === u.racha_max) { %>
-                  <span class="badge ms-1" style="background:#6f42c1;font-size:.6rem">activa</span>
-                <% } %>
-              <% } else { %>
-                <span class="text-muted">—</span>
-              <% } %>
+                <% if (u.racha_actual > 0 && u.racha_actual === u.racha_max) { %><span class="badge ms-1" style="background:#6f42c1;font-size:.58rem">activa</span><% } %>
+              <% } else { %><span class="text-muted">—</span><% } %>
             </td>
-            <td class="text-center fw-bold fs-6 text-<%= i===0 ? 'warning' : i===1 ? 'secondary' : i===2 ? 'danger' : 'dark' %>">
-              <%= u.puntos_total %>
-            </td>
+            <td class="text-center fw-bold fs-6 text-<%= i===0?'warning':i===1?'secondary':i===2?'danger':'dark' %>"><%= u.puntos_total %></td>
           </tr>
           <% }) %>
         </tbody>
       </table>
     </div>
+  </div>
+</div>
+
+<!-- Lista mobile -->
+<div class="d-md-none">
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-dark text-white fw-bold py-2">
+      <i class="bi bi-list-ol me-2"></i>Tabla General
+    </div>
+    <ul class="list-group list-group-flush">
+      <% ranking.forEach((u, i) => { %>
+      <li class="list-group-item px-3 py-2 <%= u.id===uid ? 'list-group-item-primary' : '' %>">
+        <div class="d-flex align-items-center gap-2">
+
+          <!-- Posición -->
+          <div class="text-center flex-shrink-0" style="width:28px">
+            <% if (i===0) { %><span class="fs-5">🥇</span>
+            <% } else if (i===1) { %><span class="fs-5">🥈</span>
+            <% } else if (i===2) { %><span class="fs-5">🥉</span>
+            <% } else { %><span class="fw-bold text-muted"><%= i+1 %></span><% } %>
+          </div>
+
+          <!-- Nombre + flecha + badges -->
+          <div class="flex-grow-1 min-width-0">
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <a href="/perfil/<%= u.username %>" class="text-decoration-none fw-bold <%= u.id===uid ? 'text-primary' : 'text-dark' %>" style="font-size:.95rem"><%= u.username %></a>
+              <% if (u.id===uid) { %><span class="badge bg-primary" style="font-size:.6rem">vos</span><% } %>
+              <% if (u.variacion !== null) { %>
+                <% if (u.variacion > 0) { %><span class="text-success fw-bold" style="font-size:.75rem"><i class="bi bi-caret-up-fill"></i>+<%= u.variacion %></span>
+                <% } else if (u.variacion < 0) { %><span class="text-danger fw-bold" style="font-size:.75rem"><i class="bi bi-caret-down-fill"></i><%= u.variacion %></span>
+                <% } else { %><span class="text-muted" style="font-size:.75rem"><i class="bi bi-dash"></i></span><% } %>
+              <% } %>
+            </div>
+            <div class="d-flex gap-2 mt-1 flex-wrap" style="font-size:.75rem">
+              <span class="badge bg-warning text-dark">🎯 <%= u.exactos %></span>
+              <span class="badge bg-success">≈ <%= u.diferencia %></span>
+              <span class="badge bg-primary">✓ <%= u.resultado %></span>
+              <% if (u.racha_max > 0) { %>
+                <span class="badge" style="background:#6f42c1">⚡<%= u.racha_max %><%= u.racha_actual===u.racha_max && u.racha_actual>0 ? ' 🔥' : '' %></span>
+              <% } %>
+            </div>
+          </div>
+
+          <!-- Puntos -->
+          <div class="fw-bold fs-5 flex-shrink-0 text-<%= i===0?'warning':i===1?'secondary':i===2?'danger':'dark' %>">
+            <%= u.puntos_total %><span class="text-muted fw-normal" style="font-size:.7rem"> pts</span>
+          </div>
+
+        </div>
+      </li>
+      <% }) %>
+    </ul>
   </div>
 </div>
 
