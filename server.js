@@ -74,6 +74,37 @@ async function start() {
       console.log(`⚽ JUGA Mundial 2026 en http://localhost:${PORT}`);
     });
 
+    // Snapshot diario del ranking (guarda posiciones una vez por día)
+    async function guardarSnapshotRanking() {
+      try {
+        const hoyPY = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const yaExiste = await prepare(
+          'SELECT 1 FROM ranking_snapshots WHERE fecha=$1 LIMIT 1'
+        ).get(hoyPY);
+        if (yaExiste) return;
+        const ranking = await prepare(`
+          SELECT u.id,
+            COALESCE(SUM(pr.puntos_obtenidos), 0) AS pts,
+            COUNT(CASE WHEN pr.puntos_obtenidos=5 THEN 1 END) AS exactos,
+            COUNT(CASE WHEN pr.puntos_obtenidos=3 THEN 1 END) AS diferencia
+          FROM usuarios u
+          LEFT JOIN pronosticos pr ON pr.usuario_id = u.id
+          GROUP BY u.id
+          ORDER BY pts DESC, exactos DESC, diferencia DESC
+        `).all();
+        for (let i = 0; i < ranking.length; i++) {
+          await prepare(`
+            INSERT INTO ranking_snapshots (usuario_id, posicion, fecha)
+            VALUES ($1, $2, $3) ON CONFLICT (usuario_id, fecha) DO NOTHING
+          `).run(ranking[i].id, i + 1, hoyPY);
+        }
+        console.log(`[snapshot] Ranking guardado para ${hoyPY} (${ranking.length} usuarios)`);
+      } catch (e) {
+        console.error('[snapshot] Error:', e.message);
+      }
+    }
+    guardarSnapshotRanking();
+
     // Auto-sync con API-Football cada 5 minutos (solo si la key está configurada)
     if (process.env.FOOTBALL_DATA_KEY) {
       const { sync } = require('./scripts/sync-api-football');
@@ -81,7 +112,10 @@ async function start() {
       setTimeout(async function autoSync() {
         try {
           const r = await sync();
-          if (r.actualizados > 0) console.log(`[auto-sync] ${r.actualizados} partidos actualizados`);
+          if (r.actualizados > 0) {
+            console.log(`[auto-sync] ${r.actualizados} partidos actualizados`);
+            guardarSnapshotRanking();
+          }
         } catch (e) {
           console.error('[auto-sync] Error:', e.message);
         }

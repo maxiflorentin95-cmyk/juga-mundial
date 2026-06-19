@@ -85,14 +85,31 @@
               <% } %>
             </td>
             <td>
-              <a href="/perfil/<%= u.username %>" class="text-decoration-none">
-                <span class="fw-<%= u.id === uid ? 'bold text-primary' : 'semibold' %> ranking-nombre">
-                  <%= u.username %>
-                </span>
-              </a>
-              <% if (u.id === uid) { %>
-                <span class="badge bg-primary ms-1 d-none d-sm-inline">vos</span>
-              <% } %>
+              <div class="d-flex align-items-center gap-2">
+                <a href="/perfil/<%= u.username %>" class="text-decoration-none">
+                  <span class="fw-<%= u.id === uid ? 'bold text-primary' : 'semibold' %> ranking-nombre">
+                    <%= u.username %>
+                  </span>
+                </a>
+                <% if (u.id === uid) { %>
+                  <span class="badge bg-primary d-none d-sm-inline">vos</span>
+                <% } %>
+                <% if (u.variacion !== null) { %>
+                  <% if (u.variacion > 0) { %>
+                    <span class="text-success small fw-bold" title="Subió <%= u.variacion %> posición(es)">
+                      <i class="bi bi-caret-up-fill"></i>+<%= u.variacion %>
+                    </span>
+                  <% } else if (u.variacion < 0) { %>
+                    <span class="text-danger small fw-bold" title="Bajó <%= Math.abs(u.variacion) %> posición(es)">
+                      <i class="bi bi-caret-down-fill"></i><%= u.variacion %>
+                    </span>
+                  <% } else { %>
+                    <span class="text-muted small" title="Sin cambios">
+                      <i class="bi bi-dash"></i>
+                    </span>
+                  <% } %>
+                <% } %>
+              </div>
             </td>
             <td class="text-center text-muted small d-none d-sm-table-cell"><%= u.total_pron %></td>
             <td class="text-center">

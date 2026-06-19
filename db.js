@@ -110,6 +110,13 @@ async function initSchema() {
       updated_at TIMESTAMP DEFAULT NOW()
     );
     ALTER TABLE pronosticos_especiales ADD COLUMN IF NOT EXISTS puntos_obtenidos INTEGER NOT NULL DEFAULT 0;
+    CREATE TABLE IF NOT EXISTS ranking_snapshots (
+      id SERIAL PRIMARY KEY,
+      usuario_id INTEGER REFERENCES usuarios(id),
+      posicion INTEGER NOT NULL,
+      fecha TEXT NOT NULL,
+      UNIQUE(usuario_id, fecha)
+    );
   `);
 }
 
