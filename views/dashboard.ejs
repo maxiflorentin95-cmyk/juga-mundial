@@ -146,6 +146,9 @@
               <%= new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}) %>
             </div>
           </div>
+          <a href="/historial?partido=<%= p.id %>" class="btn btn-sm btn-outline-info ms-2" title="Ver pronósticos">
+            <i class="bi bi-eye"></i>
+          </a>
         </div>
         <% }) %>
       </div>
@@ -196,6 +199,9 @@
       <div class="card-body d-grid gap-2">
         <a href="/pronosticos" class="btn btn-primary">
           <i class="bi bi-pencil-square me-2"></i>Cargar pronósticos
+        </a>
+        <a href="/historial" class="btn btn-outline-info">
+          <i class="bi bi-clock-history me-2"></i>Historial de partidos
         </a>
         <a href="/grupos" class="btn btn-outline-secondary">
           <i class="bi bi-grid-3x3-gap me-2"></i>Ver todos los grupos
