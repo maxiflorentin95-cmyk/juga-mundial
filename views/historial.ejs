@@ -112,8 +112,8 @@
 </div>
 <% } %>
 
-<!-- Tabla de pronósticos (solo si finalizado) -->
-<% if (detalle.estado === 'finalizado' && detalle.prons.length > 0) { %>
+<!-- Tabla de pronósticos (visible una vez iniciado el partido) -->
+<% if (detalle.cerrado && detalle.prons.length > 0) { %>
 
 <!-- Resumen de puntos -->
 <div class="d-flex gap-2 flex-wrap mb-3">
@@ -166,12 +166,12 @@
   </div>
 </div>
 
-<% } else if (detalle.estado !== 'finalizado') { %>
+<% } else if (!detalle.cerrado) { %>
 <div class="alert alert-warning d-flex align-items-center">
   <i class="bi bi-lock-fill me-2 fs-5"></i>
   <div>
     <strong>Pronósticos ocultos.</strong>
-    Los pronósticos individuales se revelan una vez que el partido finaliza.
+    Los pronósticos individuales se revelan una vez que el partido comience.
   </div>
 </div>
 <% } else if (detalle.total_prons === 0) { %>
