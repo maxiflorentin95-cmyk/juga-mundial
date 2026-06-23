@@ -4,7 +4,7 @@
   <a href="/dashboard" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
   <div>
     <h2 class="fw-bold mb-0"><i class="bi bi-patch-question-fill text-warning me-2"></i>Trivia Mundial</h2>
-    <div class="text-muted small">Pregunta del día · <% if(typeof orden !== 'undefined'){ %>Nº <%= orden %> de 50<% } %></div>
+    <div class="text-muted small">Pregunta del día · <% if(orden){ %>Nº <%= orden %> de 50<% } %></div>
   </div>
 </div>
 
@@ -12,20 +12,41 @@
 <div class="alert alert-info">El torneo aún no comenzó. ¡Volvé el 11 de junio!</div>
 <% } else { %>
 
+<% if (!respuesta && vistas > 1) { %>
+<div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-3">
+  <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+  <div>
+    Esta es tu <strong><%= vistas %>ª vez</strong> viendo la pregunta.
+    Tu puntaje máximo posible ahora es <strong><%= maxPts %> pts</strong>.
+    Respondé rápido para conservar más puntos.
+  </div>
+</div>
+<% } %>
+
 <div class="row g-4">
   <!-- ── PREGUNTA ── -->
   <div class="col-12 col-lg-7">
     <div class="card border-0 shadow-sm">
-      <div class="card-header text-white fw-bold py-2 d-flex align-items-center justify-content-between" style="background:#e67e22">
+      <div class="card-header fw-bold py-2 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background:#e67e22;color:#fff">
         <span><i class="bi bi-trophy-fill me-2"></i><%= pregunta.mundial %></span>
         <% if (!respuesta) { %>
-        <!-- Timer -->
-        <div class="d-flex align-items-center gap-2">
-          <div id="timer-bar-wrap" class="rounded-pill overflow-hidden" style="width:120px;height:10px;background:rgba(255,255,255,.3)">
-            <div id="timer-bar" class="h-100 rounded-pill bg-white" style="width:100%;transition:width 1s linear"></div>
+        <div class="d-flex align-items-center gap-3">
+          <span class="badge bg-white text-dark">
+            Máx <strong><%= maxPts %> pts</strong><% if (vistas > 1) { %> <span class="text-danger">(vista <%= vistas %>)</span><% } %>
+          </span>
+          <div class="d-flex align-items-center gap-2">
+            <div id="timer-bar-wrap" class="rounded-pill overflow-hidden" style="width:100px;height:10px;background:rgba(255,255,255,.3)">
+              <div id="timer-bar" class="h-100 rounded-pill bg-white" style="width:100%;transition:width 1s linear"></div>
+            </div>
+            <span id="timer-num" class="fw-bold fs-5">25</span>
           </div>
-          <span id="timer-num" class="fw-bold fs-5">25</span>
         </div>
+        <% } else { %>
+          <% if (respuesta.correcta) { %>
+            <span class="badge bg-success fs-6">+<%= respuesta.puntos %> pts</span>
+          <% } else { %>
+            <span class="badge bg-secondary fs-6">0 pts</span>
+          <% } %>
         <% } %>
       </div>
 
@@ -40,60 +61,68 @@
         ]; %>
 
         <% if (respuesta) { %>
-          <!-- Ya respondió — mostrar resultado -->
           <% opciones.forEach(op => {
-            const esCorrecta  = op.key === pregunta.correcta;
-            const esElegida   = op.key === respuesta.respuesta;
-            let cls = 'outline-secondary';
+            const esCorrecta = op.key === pregunta.correcta;
+            const esElegida  = op.key === respuesta.respuesta;
+            let cls = 'outline-secondary opacity-50';
             let icon = '';
-            if (esCorrecta)        { cls = 'success'; icon = '✓'; }
-            else if (esElegida)    { cls = 'danger';  icon = '✗'; }
+            if (esCorrecta)     { cls = 'success'; icon = ' ✓'; }
+            else if (esElegida) { cls = 'danger';  icon = ' ✗'; }
           %>
-          <div class="btn btn-<%= cls %> w-100 text-start mb-2 d-flex justify-content-between align-items-center" style="pointer-events:none">
+          <div class="btn btn-<%= cls %> w-100 text-start mb-2 d-flex justify-content-between" style="pointer-events:none">
             <span><strong><%= op.key.toUpperCase() %>.</strong> <%= op.texto %></span>
-            <span><%= icon %></span>
+            <strong><%= icon %></strong>
           </div>
           <% }) %>
 
           <div class="mt-3 text-center">
             <% if (respuesta.correcta) { %>
               <div class="alert alert-success py-2 mb-0">
-                <strong>¡Correcto!</strong> Sumaste <strong><%= respuesta.puntos %> pts</strong>
+                🎉 <strong>¡Correcto!</strong> Sumaste <strong><%= respuesta.puntos %> pts</strong>
                 en <%= parseFloat(respuesta.segundos_empleados).toFixed(1) %>s
               </div>
             <% } else if (!respuesta.respuesta) { %>
-              <div class="alert alert-warning py-2 mb-0">⏱ <strong>¡Tiempo agotado!</strong> La respuesta era <strong><%= pregunta['opcion_' + pregunta.correcta] %></strong></div>
+              <div class="alert alert-warning py-2 mb-0">⏱ <strong>Tiempo agotado.</strong> Era: <strong><%= pregunta['opcion_' + pregunta.correcta] %></strong></div>
             <% } else { %>
-              <div class="alert alert-danger py-2 mb-0">
-                Respuesta incorrecta. La correcta era <strong><%= pregunta['opcion_' + pregunta.correcta] %></strong>
-              </div>
+              <div class="alert alert-danger py-2 mb-0">❌ Incorrecto. Era: <strong><%= pregunta['opcion_' + pregunta.correcta] %></strong></div>
             <% } %>
           </div>
 
         <% } else { %>
-          <!-- Sin responder -->
           <% opciones.forEach(op => { %>
           <button class="btn btn-outline-secondary w-100 text-start mb-2 btn-opcion fw-semibold"
             data-opcion="<%= op.key %>" id="btn-<%= op.key %>">
             <strong><%= op.key.toUpperCase() %>.</strong> <%= op.texto %>
           </button>
           <% }) %>
-
           <div id="msg-trivia" class="mt-3 text-center"></div>
         <% } %>
       </div>
     </div>
 
-    <!-- Volvé mañana -->
     <% if (respuesta) { %>
     <div class="card border-0 shadow-sm mt-3 text-center py-3 bg-dark text-white">
       <div class="small text-muted">Próxima pregunta</div>
       <div class="fw-bold">Mañana a las 00:00 PY</div>
     </div>
     <% } %>
+
+    <!-- Escala de puntos -->
+    <% if (!respuesta) { %>
+    <div class="card border-0 shadow-sm mt-3">
+      <div class="card-body py-2 px-3">
+        <div class="small text-muted fw-semibold mb-1">Puntos según velocidad (techo: <%= maxPts %> pts)</div>
+        <div class="d-flex gap-2 flex-wrap">
+          <% [[5,10],[10,8],[15,6],[20,4],[25,2]].forEach(([t,p]) => { %>
+          <span class="badge <%= p <= maxPts ? 'bg-success' : 'bg-secondary opacity-50' %>">≤<%= t %>s → <%= Math.min(p, maxPts) %>pts</span>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+    <% } %>
   </div>
 
-  <!-- ── RANKING TRIVIA ── -->
+  <!-- ── RANKING ── -->
   <div class="col-12 col-lg-5">
     <div class="card border-0 shadow-sm">
       <div class="card-header fw-bold py-2 text-white" style="background:#6f42c1">
@@ -106,18 +135,16 @@
         <% ranking.forEach((u, i) => { %>
         <li class="list-group-item px-3 py-2 <%= u.id === uid ? 'list-group-item-warning' : '' %>">
           <div class="d-flex align-items-center gap-2">
-            <span class="fw-bold text-muted" style="width:22px">
-              <%= i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : (i+1) %>
-            </span>
+            <span class="fw-bold" style="width:22px"><%= i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1) %></span>
             <div class="flex-grow-1">
               <span class="fw-semibold"><%= u.username %></span>
               <% if (u.id === uid) { %><span class="badge ms-1" style="background:#e67e22;font-size:.6rem">vos</span><% } %>
               <div style="font-size:.72rem" class="text-muted">
                 ✓ <%= u.aciertos %>/<%= u.respondidas %>
-                <% if (u.avg_segundos) { %> · ⏱ <%= u.avg_segundos %>s prom<% } %>
+                <% if (u.avg_segundos) { %> · ⏱ <%= u.avg_segundos %>s<% } %>
               </div>
             </div>
-            <div class="fw-bold" style="color:#6f42c1"><%= u.pts_trivia %> <small class="text-muted fw-normal">pts</small></div>
+            <div class="fw-bold" style="color:#6f42c1"><%= u.pts_trivia %><small class="text-muted fw-normal"> pts</small></div>
           </div>
         </li>
         <% }) %>
@@ -126,39 +153,33 @@
     </div>
   </div>
 </div>
-
 <% } %>
 
 <% if (pregunta && !respuesta) { %>
 <script>
 const TIEMPO_MAX  = <%= tiempoMax %>;
+const MAX_PTS     = <%= maxPts %>;
 const PREGUNTA_ID = <%= pregunta.id %>;
 let tiempoInicio  = Date.now();
 let respondido    = false;
 
-// Countdown
-const timerNum  = document.getElementById('timer-num');
-const timerBar  = document.getElementById('timer-bar');
-let segundosRestantes = TIEMPO_MAX;
+const timerNum = document.getElementById('timer-num');
+const timerBar = document.getElementById('timer-bar');
+let segsRestantes = TIEMPO_MAX;
 
 const intervalo = setInterval(() => {
-  segundosRestantes--;
-  timerNum.textContent = segundosRestantes;
-  timerBar.style.width = (segundosRestantes / TIEMPO_MAX * 100) + '%';
-
-  if (segundosRestantes <= 5) timerBar.classList.replace('bg-white', 'bg-danger') || timerBar.classList.add('bg-danger');
-  if (segundosRestantes <= 0) {
-    clearInterval(intervalo);
-    if (!respondido) enviar(null);
-  }
+  segsRestantes--;
+  timerNum.textContent = segsRestantes;
+  timerBar.style.width = (segsRestantes / TIEMPO_MAX * 100) + '%';
+  if (segsRestantes <= 5) timerBar.classList.add('bg-danger');
+  if (segsRestantes <= 0) { clearInterval(intervalo); if (!respondido) enviar(null); }
 }, 1000);
 
 document.querySelectorAll('.btn-opcion').forEach(btn => {
   btn.addEventListener('click', function() {
     if (respondido) return;
     clearInterval(intervalo);
-    const segs = Math.min((Date.now() - tiempoInicio) / 1000, TIEMPO_MAX);
-    enviar(this.dataset.opcion, segs);
+    enviar(this.dataset.opcion, (Date.now() - tiempoInicio) / 1000);
   });
 });
 
@@ -177,33 +198,22 @@ async function enviar(opcion, segs) {
     return;
   }
 
-  // Pintar opciones
-  const claves = ['a','b','c','d'];
-  claves.forEach(k => {
+  ['a','b','c','d'].forEach(k => {
     const btn = document.getElementById('btn-' + k);
     btn.classList.remove('btn-outline-secondary');
-    if (k === r.respuesta_correcta) {
-      btn.classList.add('btn-success');
-      btn.innerHTML += ' <strong>✓</strong>';
-    } else if (k === opcion && !r.correcta) {
-      btn.classList.add('btn-danger');
-      btn.innerHTML += ' <strong>✗</strong>';
-    } else {
-      btn.classList.add('btn-outline-secondary', 'opacity-50');
-    }
+    if (k === r.respuesta_correcta)      { btn.classList.add('btn-success'); btn.innerHTML += ' <strong>✓</strong>'; }
+    else if (k === opcion && !r.correcta) { btn.classList.add('btn-danger');  btn.innerHTML += ' <strong>✗</strong>'; }
+    else btn.classList.add('btn-outline-secondary', 'opacity-50');
   });
 
-  // Mensaje
   const msg = document.getElementById('msg-trivia');
   if (!opcion) {
-    msg.innerHTML = `<div class="alert alert-warning py-2">⏱ <strong>¡Tiempo agotado!</strong> 0 pts</div>`;
+    msg.innerHTML = `<div class="alert alert-warning py-2">⏱ <strong>Tiempo agotado.</strong> 0 pts</div>`;
   } else if (r.correcta) {
-    msg.innerHTML = `<div class="alert alert-success py-2">🎉 <strong>¡Correcto!</strong> +${r.puntos} pts en ${r.segundos.toFixed(1)}s<br><small>Recargá para ver el ranking actualizado</small></div>`;
+    msg.innerHTML = `<div class="alert alert-success py-2">🎉 <strong>¡Correcto!</strong> +${r.puntos} pts en ${parseFloat(r.segundos).toFixed(1)}s</div>`;
   } else {
     msg.innerHTML = `<div class="alert alert-danger py-2">❌ Incorrecto. 0 pts</div>`;
   }
-
-  // Ocultar timer
   document.getElementById('timer-bar-wrap')?.remove();
   document.getElementById('timer-num')?.remove();
 }

@@ -122,6 +122,13 @@ async function initSchema() {
       mundial TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS trivia_vistas (
+      id SERIAL PRIMARY KEY,
+      usuario_id INTEGER REFERENCES usuarios(id),
+      pregunta_id INTEGER REFERENCES trivia_preguntas(id),
+      vistas INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(usuario_id, pregunta_id)
+    );
     CREATE TABLE IF NOT EXISTS trivia_respuestas (
       id SERIAL PRIMARY KEY,
       usuario_id INTEGER REFERENCES usuarios(id),

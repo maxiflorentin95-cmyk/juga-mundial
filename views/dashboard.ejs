@@ -328,4 +328,52 @@
 
 </div>
 
+<!-- ── Modal Trivia del Día ──────────────────────────────────── -->
+<div class="modal fade" id="triviaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header py-2 text-white" style="background:#e67e22">
+        <h5 class="modal-title fw-bold"><i class="bi bi-patch-question-fill me-2"></i>Trivia del Día</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="trivia-modal-body">
+        <div class="text-center py-4"><div class="spinner-border text-warning"></div></div>
+      </div>
+      <div class="modal-footer py-2 justify-content-between">
+        <span class="text-muted small" id="trivia-modal-hint"></span>
+        <a href="/trivia" class="btn btn-sm" style="background:#e67e22;color:#fff">
+          Ver pregunta completa <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function () {
+  const STORAGE_KEY = 'trivia_popup_visto_' + '<%= hoy %>';
+  if (localStorage.getItem(STORAGE_KEY)) return; // ya se mostró hoy
+
+  try {
+    const data = await fetch('/trivia/hoy').then(r => r.json());
+    if (!data.ok || !data.pendiente) return; // no hay pregunta o ya respondió
+
+    localStorage.setItem(STORAGE_KEY, '1');
+
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('triviaModal'));
+    document.getElementById('trivia-modal-hint').textContent =
+      'Cerrá para responder desde /trivia (penaliza el puntaje máximo)';
+    document.getElementById('trivia-modal-body').innerHTML = `
+      <p class="text-center text-muted small mb-2">Tenés una pregunta pendiente de hoy.</p>
+      <div class="alert alert-warning py-2 text-center mb-0">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        Cada vez que lo cerrás sin responder, tu puntaje máximo baja.<br>
+        <strong>¡Respondé ahora para sumar hasta 10 pts!</strong>
+      </div>`;
+    modal.show();
+  } catch (_) {}
+})();
+</script>
+
 <%- include('partials/footer') %>
