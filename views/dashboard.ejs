@@ -355,6 +355,69 @@
 
 </div>
 
+<!-- ── Partidos más acertados / más difíciles ─────────────────── -->
+<% if (masAcertados.length > 0) { %>
+<div class="row g-4 mt-1">
+
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-bold py-2 text-white" style="background:#198754">
+        ✅ Partidos más acertados
+      </div>
+      <ul class="list-group list-group-flush">
+        <% masAcertados.forEach((p, i) => { %>
+        <li class="list-group-item px-3 py-2 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-muted" style="width:18px"><%= i+1 %></span>
+            <span class="fw-semibold">
+              <%= p.local_bandera %> <%= p.local_corto %>
+              <span class="badge bg-dark mx-1"><%= p.goles_local %>-<%= p.goles_visitante %></span>
+              <%= p.visit_corto %> <%= p.visit_bandera %>
+            </span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <div class="progress" style="width:60px;height:8px">
+              <div class="progress-bar bg-success" style="width:<%= p.pct_acierto %>%"></div>
+            </div>
+            <span class="fw-bold text-success" style="min-width:38px;text-align:right"><%= p.pct_acierto %>%</span>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-bold py-2 text-white" style="background:#dc3545">
+        💀 Partidos más difíciles
+      </div>
+      <ul class="list-group list-group-flush">
+        <% masDificiles.forEach((p, i) => { %>
+        <li class="list-group-item px-3 py-2 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-muted" style="width:18px"><%= i+1 %></span>
+            <span class="fw-semibold">
+              <%= p.local_bandera %> <%= p.local_corto %>
+              <span class="badge bg-dark mx-1"><%= p.goles_local %>-<%= p.goles_visitante %></span>
+              <%= p.visit_corto %> <%= p.visit_bandera %>
+            </span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <div class="progress" style="width:60px;height:8px">
+              <div class="progress-bar bg-danger" style="width:<%= p.pct_acierto %>%"></div>
+            </div>
+            <span class="fw-bold text-danger" style="min-width:38px;text-align:right"><%= p.pct_acierto %>%</span>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+
+</div>
+<% } %>
+
 <!-- ── Modal Trivia del Día ──────────────────────────────────── -->
 <div class="modal fade" id="triviaModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">

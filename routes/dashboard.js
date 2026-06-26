@@ -153,7 +153,32 @@ router.get('/', requireLogin, async (req, res) => {
       if (uRacha) rachaLider = { username: uRacha.username, streakActual: top.streakActual, streakMax: top.streakMax };
     }
 
-    // 4. El Mufa: usuario que más veces apostó por el equipo que perdió
+    // 4. Partidos más acertados y más difíciles
+    const statsPartidos = await prepare(`
+      SELECT p.id,
+             el.nombre_corto AS local_corto, el.bandera AS local_bandera,
+             ev.nombre_corto AS visit_corto, ev.bandera AS visit_bandera,
+             p.goles_local, p.goles_visitante,
+             COUNT(pr.id) AS total,
+             COUNT(CASE WHEN pr.puntos_obtenidos > 0 THEN 1 END) AS acertaron,
+             ROUND(COUNT(CASE WHEN pr.puntos_obtenidos > 0 THEN 1 END) * 100.0 / NULLIF(COUNT(pr.id),0), 0) AS pct_acierto
+      FROM partidos p
+      JOIN equipos el ON p.equipo_local_id = el.id
+      JOIN equipos ev ON p.equipo_visitante_id = ev.id
+      LEFT JOIN pronosticos pr ON pr.partido_id = p.id
+      WHERE p.estado = 'finalizado'
+      GROUP BY p.id, el.nombre_corto, el.bandera, ev.nombre_corto, ev.bandera, p.goles_local, p.goles_visitante
+      HAVING COUNT(pr.id) >= 3
+    `).all();
+
+    const masAcertados = [...statsPartidos]
+      .sort((a, b) => b.pct_acierto - a.pct_acierto)
+      .slice(0, 5);
+    const masDificiles = [...statsPartidos]
+      .sort((a, b) => a.pct_acierto - b.pct_acierto)
+      .slice(0, 5);
+
+    // 5. El Mufa: usuario que más veces apostó por el equipo que perdió
     const mufaRow = await prepare(`
       SELECT u.username, u.id, COUNT(*) AS veces_mufa
       FROM pronosticos pr
@@ -175,6 +200,7 @@ router.get('/', requireLogin, async (req, res) => {
       title: 'Dashboard', hoy, partidosHoy, pronMap, proximos,
       resultados, topRanking, miPosicion: parseInt(miPosicion.pos),
       termometro, jornadaPerfecta, fechaJornada, rachaLider, mufa,
+      masAcertados, masDificiles,
     });
   } catch (e) {
     console.error(e);
