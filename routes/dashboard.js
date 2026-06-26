@@ -153,10 +153,28 @@ router.get('/', requireLogin, async (req, res) => {
       if (uRacha) rachaLider = { username: uRacha.username, streakActual: top.streakActual, streakMax: top.streakMax };
     }
 
+    // 4. El Mufa: usuario que más veces apostó por el equipo que perdió
+    const mufaRow = await prepare(`
+      SELECT u.username, u.id, COUNT(*) AS veces_mufa
+      FROM pronosticos pr
+      JOIN partidos p ON pr.partido_id = p.id
+      JOIN usuarios u ON pr.usuario_id = u.id
+      WHERE p.estado = 'finalizado'
+        AND (
+          (pr.goles_local > pr.goles_visitante AND p.goles_local < p.goles_visitante)
+          OR
+          (pr.goles_visitante > pr.goles_local AND p.goles_visitante < p.goles_local)
+        )
+      GROUP BY u.id, u.username
+      ORDER BY veces_mufa DESC
+      LIMIT 1
+    `).get();
+    const mufa = mufaRow || null;
+
     res.render('dashboard', {
       title: 'Dashboard', hoy, partidosHoy, pronMap, proximos,
       resultados, topRanking, miPosicion: parseInt(miPosicion.pos),
-      termometro, jornadaPerfecta, fechaJornada, rachaLider,
+      termometro, jornadaPerfecta, fechaJornada, rachaLider, mufa,
     });
   } catch (e) {
     console.error(e);
