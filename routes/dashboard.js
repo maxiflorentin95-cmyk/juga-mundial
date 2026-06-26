@@ -155,19 +155,22 @@ router.get('/', requireLogin, async (req, res) => {
 
     // 4. Partidos más acertados y más difíciles
     const statsPartidos = await prepare(`
-      SELECT p.id,
-             el.nombre_corto AS local_corto, el.bandera AS local_bandera,
-             ev.nombre_corto AS visit_corto, ev.bandera AS visit_bandera,
-             p.goles_local, p.goles_visitante,
+      SELECT p.id, p.fase, p.grupo, p.goles_local, p.goles_visitante,
+             el.nombre AS local_nombre, el.bandera AS local_bandera,
+             ev.nombre AS visit_nombre, ev.bandera AS visit_bandera,
              COUNT(pr.id) AS total,
-             COUNT(CASE WHEN pr.puntos_obtenidos > 0 THEN 1 END) AS acertaron,
+             COUNT(CASE WHEN pr.puntos_obtenidos = 5 THEN 1 END) AS exactos,
+             COUNT(CASE WHEN pr.puntos_obtenidos IN (2,3) THEN 1 END) AS no_exactos,
+             COUNT(CASE WHEN pr.puntos_obtenidos > 0 THEN 1 END) AS con_puntos,
+             COUNT(CASE WHEN pr.puntos_obtenidos = 0 THEN 1 END) AS fallaron,
              ROUND(COUNT(CASE WHEN pr.puntos_obtenidos > 0 THEN 1 END) * 100.0 / NULLIF(COUNT(pr.id),0), 0) AS pct_acierto
       FROM partidos p
       JOIN equipos el ON p.equipo_local_id = el.id
       JOIN equipos ev ON p.equipo_visitante_id = ev.id
       LEFT JOIN pronosticos pr ON pr.partido_id = p.id
       WHERE p.estado = 'finalizado'
-      GROUP BY p.id, el.nombre_corto, el.bandera, ev.nombre_corto, ev.bandera, p.goles_local, p.goles_visitante
+      GROUP BY p.id, p.fase, p.grupo, p.goles_local, p.goles_visitante,
+               el.nombre, el.bandera, ev.nombre, ev.bandera
       HAVING COUNT(pr.id) >= 3
     `).all();
 

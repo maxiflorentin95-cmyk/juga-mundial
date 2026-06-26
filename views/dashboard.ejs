@@ -357,6 +357,7 @@
 
 <!-- ── Partidos más acertados / más difíciles ─────────────────── -->
 <% if (masAcertados.length > 0) { %>
+<% const faseLabel = f => f === 'grupos' ? 'Fase de Grupos' : f === 'octavos' ? 'Octavos de Final' : f === 'cuartos' ? 'Cuartos de Final' : f === 'semis' ? 'Semifinal' : f === 'final' ? 'Final' : f; %>
 <div class="row g-4 mt-1">
 
   <div class="col-12 col-lg-6">
@@ -364,26 +365,37 @@
       <div class="card-header fw-bold py-2 text-white" style="background:#198754">
         ✅ Partidos más acertados
       </div>
-      <ul class="list-group list-group-flush">
-        <% masAcertados.forEach((p, i) => { %>
-        <li class="list-group-item px-3 py-2 d-flex align-items-center justify-content-between">
-          <div class="d-flex align-items-center gap-2">
-            <span class="fw-bold text-muted" style="width:18px"><%= i+1 %></span>
-            <span class="fw-semibold">
-              <%= p.local_bandera %> <%= p.local_corto %>
-              <span class="badge bg-dark mx-1"><%= p.goles_local %>-<%= p.goles_visitante %></span>
-              <%= p.visit_corto %> <%= p.visit_bandera %>
-            </span>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <div class="progress" style="width:60px;height:8px">
-              <div class="progress-bar bg-success" style="width:<%= p.pct_acierto %>%"></div>
-            </div>
-            <span class="fw-bold text-success" style="min-width:38px;text-align:right"><%= p.pct_acierto %>%</span>
-          </div>
-        </li>
-        <% }) %>
-      </ul>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead class="table-dark" style="font-size:.75rem">
+            <tr>
+              <th>Partido</th>
+              <th class="text-center">Real</th>
+              <th class="text-center text-warning">Exactos</th>
+              <th class="text-center text-info">No exactos</th>
+              <th class="text-center">Con puntos</th>
+            </tr>
+          </thead>
+          <tbody style="font-size:.82rem">
+            <% masAcertados.forEach(p => { %>
+            <tr>
+              <td>
+                <a href="/historial?partido=<%= p.id %>" class="text-decoration-none fw-semibold text-dark">
+                  <%= p.local_bandera %> <%= p.local_nombre %> vs <%= p.visit_nombre %> <%= p.visit_bandera %>
+                </a>
+                <div class="text-muted" style="font-size:.7rem"><%= faseLabel(p.fase) %><% if (p.grupo) { %> · Grupo <%= p.grupo %><% } %></div>
+              </td>
+              <td class="text-center fw-bold"><%= p.goles_local %>-<%= p.goles_visitante %></td>
+              <td class="text-center fw-bold text-warning"><%= p.exactos %></td>
+              <td class="text-center fw-bold text-info"><%= p.no_exactos %></td>
+              <td class="text-center">
+                <span class="badge bg-success"><%= p.con_puntos %>/<%= p.total %></span>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -392,26 +404,37 @@
       <div class="card-header fw-bold py-2 text-white" style="background:#dc3545">
         💀 Partidos más difíciles
       </div>
-      <ul class="list-group list-group-flush">
-        <% masDificiles.forEach((p, i) => { %>
-        <li class="list-group-item px-3 py-2 d-flex align-items-center justify-content-between">
-          <div class="d-flex align-items-center gap-2">
-            <span class="fw-bold text-muted" style="width:18px"><%= i+1 %></span>
-            <span class="fw-semibold">
-              <%= p.local_bandera %> <%= p.local_corto %>
-              <span class="badge bg-dark mx-1"><%= p.goles_local %>-<%= p.goles_visitante %></span>
-              <%= p.visit_corto %> <%= p.visit_bandera %>
-            </span>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <div class="progress" style="width:60px;height:8px">
-              <div class="progress-bar bg-danger" style="width:<%= p.pct_acierto %>%"></div>
-            </div>
-            <span class="fw-bold text-danger" style="min-width:38px;text-align:right"><%= p.pct_acierto %>%</span>
-          </div>
-        </li>
-        <% }) %>
-      </ul>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead class="table-dark" style="font-size:.75rem">
+            <tr>
+              <th>Partido</th>
+              <th class="text-center">Real</th>
+              <th class="text-center text-warning">Exactos</th>
+              <th class="text-center text-info">No exactos</th>
+              <th class="text-center">Con puntos</th>
+            </tr>
+          </thead>
+          <tbody style="font-size:.82rem">
+            <% masDificiles.forEach(p => { %>
+            <tr>
+              <td>
+                <a href="/historial?partido=<%= p.id %>" class="text-decoration-none fw-semibold text-dark">
+                  <%= p.local_bandera %> <%= p.local_nombre %> vs <%= p.visit_nombre %> <%= p.visit_bandera %>
+                </a>
+                <div class="text-muted" style="font-size:.7rem"><%= faseLabel(p.fase) %><% if (p.grupo) { %> · Grupo <%= p.grupo %><% } %></div>
+              </td>
+              <td class="text-center fw-bold"><%= p.goles_local %>-<%= p.goles_visitante %></td>
+              <td class="text-center fw-bold text-warning"><%= p.exactos %></td>
+              <td class="text-center fw-bold text-info"><%= p.no_exactos %></td>
+              <td class="text-center">
+                <span class="badge bg-danger"><%= p.con_puntos %>/<%= p.total %></span>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
