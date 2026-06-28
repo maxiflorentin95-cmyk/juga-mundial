@@ -92,6 +92,15 @@
                   <% } else { %><span class="text-muted small"><i class="bi bi-dash"></i></span><% } %>
                 <% } %>
               </div>
+              <% if (u.especiales && (u.especiales.campeon || u.especiales.segundo || u.especiales.tercero)) { %>
+              <div class="text-muted mt-1" style="font-size:.72rem; line-height:1.4">
+                <% if (u.especiales.campeon) { %>🏆 <%= u.especiales.campeon %><% } %>
+                <% if (u.especiales.segundo) { %> &nbsp;🥈 <%= u.especiales.segundo %><% } %>
+                <% if (u.especiales.tercero) { %> &nbsp;🥉 <%= u.especiales.tercero %><% } %>
+              </div>
+              <% } else { %>
+              <div class="text-muted mt-1" style="font-size:.68rem; opacity:.55">Sin especiales definidos</div>
+              <% } %>
             </td>
             <td class="text-center text-muted small"><%= u.total_pron %></td>
             <td class="text-center"><span class="badge bg-warning text-dark"><%= u.exactos %></span></td>
@@ -142,6 +151,15 @@
                 <% } else { %><span class="text-muted" style="font-size:.75rem"><i class="bi bi-dash"></i></span><% } %>
               <% } %>
             </div>
+            <% if (u.especiales && (u.especiales.campeon || u.especiales.segundo || u.especiales.tercero)) { %>
+            <div class="text-muted mt-1" style="font-size:.7rem; line-height:1.5">
+              <% if (u.especiales.campeon) { %>🏆 <%= u.especiales.campeon %><% } %>
+              <% if (u.especiales.segundo) { %> 🥈 <%= u.especiales.segundo %><% } %>
+              <% if (u.especiales.tercero) { %> 🥉 <%= u.especiales.tercero %><% } %>
+            </div>
+            <% } else { %>
+            <div class="text-muted mt-1" style="font-size:.67rem; opacity:.5">Sin especiales definidos</div>
+            <% } %>
             <div class="d-flex gap-2 mt-1 flex-wrap" style="font-size:.75rem">
               <span class="badge bg-warning text-dark">🎯 <%= u.exactos %></span>
               <span class="badge bg-success">≈ <%= u.diferencia %></span>

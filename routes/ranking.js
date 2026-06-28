@@ -70,6 +70,19 @@ router.get('/', requireLogin, async (req, res) => {
       u.racha_actual = r.streakActual;
     });
 
+    // Especiales (campeón, segundo, tercero) por usuario
+    const especiales = await prepare(`
+      SELECT usuario_id, tipo, valor
+      FROM pronosticos_especiales
+      WHERE tipo IN ('campeon', 'segundo', 'tercero')
+    `).all();
+    const especMap = {};
+    especiales.forEach(e => {
+      if (!especMap[e.usuario_id]) especMap[e.usuario_id] = {};
+      especMap[e.usuario_id][e.tipo] = e.valor;
+    });
+    ranking.forEach(u => { u.especiales = especMap[u.id] || null; });
+
     const miPos = ranking.findIndex(u => u.id === uid) + 1;
     res.render('ranking', { title: 'Ranking', ranking, miPos, uid });
   } catch (e) { console.error(e); res.status(500).send('Error'); }
