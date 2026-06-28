@@ -6,8 +6,9 @@ function estaCerrado(fecha, hora) {
   return new Date() >= new Date(`${fecha}T${hora}:00-03:00`);
 }
 
-const FASES = ['octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
+const FASES = ['dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
 const FASE_LABEL = {
+  dieciseisavos: '16avos de Final',
   octavos: 'Octavos de Final',
   cuartos: 'Cuartos de Final',
   semifinal: 'Semifinales',
@@ -26,7 +27,7 @@ router.get('/', requireLogin, async (req, res) => {
       JOIN equipos el ON p.equipo_local_id = el.id
       JOIN equipos ev ON p.equipo_visitante_id = ev.id
       WHERE p.fase != 'grupos'
-      ORDER BY ARRAY_POSITION(ARRAY['octavos','cuartos','semifinal','tercer_puesto','final']::text[], p.fase), p.fecha, p.hora
+      ORDER BY ARRAY_POSITION(ARRAY['dieciseisavos','octavos','cuartos','semifinal','tercer_puesto','final']::text[], p.fase), p.fecha, p.hora
     `).all();
 
     if (partidos.length === 0) {

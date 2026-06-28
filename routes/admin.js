@@ -738,7 +738,7 @@ router.post('/agregar-partido-eliminatoria', requireAdmin, async (req, res) => {
     if (local_id === visit_id)
       return res.json({ ok: false, msg: 'Local y visitante no pueden ser el mismo equipo' });
 
-    const fases_validas = ['octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
+    const fases_validas = ['dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
     if (!fases_validas.includes(fase))
       return res.json({ ok: false, msg: 'Fase inválida' });
 
@@ -778,9 +778,9 @@ router.post('/eliminar-partido-eliminatoria', requireAdmin, async (req, res) => 
 // Ver resultados de eliminatoria
 router.get('/resultados-eliminatoria', requireAdmin, async (req, res) => {
   try {
-    const FASES = ['octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
+    const FASES = ['dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
     const FASE_LABEL = {
-      octavos: 'Octavos de Final', cuartos: 'Cuartos de Final',
+      dieciseisavos: '16avos de Final', octavos: 'Octavos de Final', cuartos: 'Cuartos de Final',
       semifinal: 'Semifinales', tercer_puesto: 'Tercer Puesto', final: 'Gran Final',
     };
 
@@ -791,7 +791,7 @@ router.get('/resultados-eliminatoria', requireAdmin, async (req, res) => {
       JOIN equipos el ON p.equipo_local_id = el.id
       JOIN equipos ev ON p.equipo_visitante_id = ev.id
       WHERE p.fase != 'grupos'
-      ORDER BY ARRAY_POSITION(ARRAY['octavos','cuartos','semifinal','tercer_puesto','final']::text[], p.fase), p.fecha, p.hora
+      ORDER BY ARRAY_POSITION(ARRAY['dieciseisavos','octavos','cuartos','semifinal','tercer_puesto','final']::text[], p.fase), p.fecha, p.hora
     `).all();
 
     const porFase = {};

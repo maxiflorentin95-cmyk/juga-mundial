@@ -79,6 +79,16 @@ const TEAM_MAP = {
 
 const mapTeam = (n) => TEAM_MAP[n] || n;
 
+// Mapeo de stages de la API → fases en nuestra DB
+const STAGE_MAP = {
+  'LAST_32':       'dieciseisavos',
+  'LAST_16':       'octavos',
+  'QUARTER_FINALS':'cuartos',
+  'SEMI_FINALS':   'semifinal',
+  'THIRD_PLACE':   'tercer_puesto',
+  'FINAL':         'final',
+};
+
 function calcularPuntos(pL, pV, rL, rV) {
   if (pL === rL && pV === rV)                         return 5;
   if ((pL - pV) === (rL - rV))                       return 3;
@@ -131,33 +141,71 @@ async function sync() {
     dbIdx[`${p.local_nombre}|${p.visit_nombre}`] = p;
   }
 
+  // Mapa nombre → id de equipos para poder insertar cruces nuevos
+  const dbEquipos = await prepare('SELECT id, nombre FROM equipos').all();
+  const equipoId = {};
+  for (const e of dbEquipos) equipoId[e.nombre] = e.id;
+
   const client = await pool.connect();
   let actualizados = 0;
+  let insertados = 0;
   const errores = [];
-  const sinMapeo = [];
 
   try {
     for (const m of matches) {
-      const apiLocal = mapTeam(m.homeTeam.name);
-      const apiVisit = mapTeam(m.awayTeam.name);
-      const dbP = dbIdx[`${apiLocal}|${apiVisit}`];
+      const rawLocal = m.homeTeam?.name;
+      const rawVisit = m.awayTeam?.name;
 
-      if (!dbP) {
-        // Solo loguear en desarrollo para detectar mapeos faltantes
-        if (process.env.NODE_ENV !== 'production') {
-          sinMapeo.push(`${m.homeTeam.name} vs ${m.awayTeam.name}`);
+      // Si la API aún no tiene equipos definidos para este partido, saltar
+      if (!rawLocal || !rawVisit) continue;
+
+      const apiLocal = mapTeam(rawLocal);
+      const apiVisit = mapTeam(rawVisit);
+      const status   = m.status; // SCHEDULED, TIMED, IN_PLAY, PAUSED, FINISHED
+      const pyTime   = toParaguayTime(m.utcDate);
+      const fase     = STAGE_MAP[m.stage];
+
+      let dbP = dbIdx[`${apiLocal}|${apiVisit}`];
+
+      // ── Auto-insertar cruces de eliminatoria que aún no están en la DB ──
+      if (!dbP && fase) {
+        const localId = equipoId[apiLocal];
+        const visitId = equipoId[apiVisit];
+
+        if (!localId || !visitId) {
+          // Equipo no reconocido (nombre nuevo o TBD genérico) — no insertar
+          console.log(`[sync] Equipo sin mapeo: "${rawLocal}" / "${rawVisit}"`);
+          continue;
         }
-        continue;
+
+        try {
+          const r = await prepare(`
+            INSERT INTO partidos (fase, grupo, equipo_local_id, equipo_visitante_id, fecha, hora, estadio, ciudad, estado)
+            VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, 'pendiente')
+          `).run(fase, localId, visitId, pyTime.fecha, pyTime.hora,
+                 m.venue || '', m.area?.name || '');
+
+          const newId = r.lastInsertRowid;
+          dbP = { id: newId, estado: 'pendiente', fecha: pyTime.fecha, hora: pyTime.hora,
+                  local_nombre: apiLocal, visit_nombre: apiVisit };
+          dbIdx[`${apiLocal}|${apiVisit}`] = dbP;
+          insertados++;
+          console.log(`[sync] ✚ Cruce insertado: ${apiLocal} vs ${apiVisit} (${fase}, ${pyTime.fecha} ${pyTime.hora})`);
+        } catch (e) {
+          errores.push(`Insertar ${apiLocal} vs ${apiVisit}: ${e.message}`);
+          continue;
+        }
       }
 
-      const status  = m.status; // SCHEDULED, TIMED, IN_PLAY, PAUSED, FINISHED
-      const pyTime  = toParaguayTime(m.utcDate);
+      if (!dbP) continue;
 
       // Actualizar fecha/hora si cambió y el partido sigue pendiente
       if (dbP.estado === 'pendiente' &&
           (dbP.fecha !== pyTime.fecha || dbP.hora !== pyTime.hora)) {
         await prepare('UPDATE partidos SET fecha=$1, hora=$2 WHERE id=$3')
           .run(pyTime.fecha, pyTime.hora, dbP.id);
+        dbP.fecha = pyTime.fecha;
+        dbP.hora  = pyTime.hora;
       }
 
       // Actualizar resultado solo cuando el partido termina
@@ -169,7 +217,6 @@ async function sync() {
         try {
           await client.query('BEGIN');
 
-          // Restar puntos previos para recalcular limpio
           const { rows: prons } = await client.query(
             'SELECT * FROM pronosticos WHERE partido_id=$1', [dbP.id]
           );
@@ -180,13 +227,11 @@ async function sync() {
             );
           }
 
-          // Guardar resultado final
           await client.query(
             "UPDATE partidos SET goles_local=$1, goles_visitante=$2, estado='finalizado' WHERE id=$3",
             [gl, gv, dbP.id]
           );
 
-          // Recalcular puntos por pronóstico
           for (const pr of prons) {
             const pts = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
             await client.query(
@@ -213,9 +258,8 @@ async function sync() {
     client.release();
   }
 
-  if (sinMapeo.length) console.log(`[sync] Sin mapeo (${sinMapeo.length}):`, sinMapeo.join(', '));
-  console.log(`[sync] Completado: ${actualizados} partidos actualizados, ${errores.length} errores`);
-  return { actualizados, errores };
+  console.log(`[sync] Completado: ${insertados} cruces insertados, ${actualizados} resultados actualizados, ${errores.length} errores`);
+  return { actualizados, insertados, errores };
 }
 
 module.exports = { sync };

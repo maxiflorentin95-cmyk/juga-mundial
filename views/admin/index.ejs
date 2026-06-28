@@ -202,6 +202,7 @@
               <div class="col-12 col-sm-4">
                 <label class="form-label small fw-semibold mb-1">Fase</label>
                 <select id="elim-fase" class="form-select form-select-sm">
+                  <option value="dieciseisavos">16avos de Final</option>
                   <option value="octavos">Octavos de Final</option>
                   <option value="cuartos">Cuartos de Final</option>
                   <option value="semifinal">Semifinales</option>
@@ -416,7 +417,12 @@ document.getElementById('btnSync').addEventListener('click', async function() {
   try {
     const r = await fetch('/admin/sync', { method: 'POST' }).then(x => x.json());
     if (r.ok) {
-      msg.innerHTML = `<div class="alert alert-success py-2">✓ ${r.actualizados} partido(s) actualizado(s)${r.errores && r.errores.length ? '<br>Errores: ' + r.errores.join(', ') : ''}</div>`;
+      const lineas = [];
+      if (r.insertados) lineas.push(`✚ ${r.insertados} cruce(s) de eliminatoria insertado(s)`);
+      if (r.actualizados) lineas.push(`✓ ${r.actualizados} resultado(s) actualizado(s)`);
+      if (!lineas.length) lineas.push('Sin novedades');
+      if (r.errores && r.errores.length) lineas.push('Errores: ' + r.errores.join(', '));
+      msg.innerHTML = `<div class="alert alert-success py-2">${lineas.join('<br>')}</div>`;
     } else if (r.msg && r.msg.includes('Free plans')) {
       msg.innerHTML = `<div class="alert alert-warning py-2">
         <strong>Plan gratuito de API-Football no incluye 2026.</strong><br>
