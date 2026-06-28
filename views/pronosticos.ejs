@@ -82,7 +82,7 @@
         <!-- Hora + grupo -->
         <div class="text-center" style="min-width:52px">
           <div class="fw-bold small lh-1"><%= p.hora %></div>
-          <div class="text-muted" style="font-size:.65rem">Gr. <%= p.grupo %></div>
+          <div class="text-muted" style="font-size:.65rem"><%= p.grupo ? 'Gr. ' + p.grupo : p.fase ? p.fase.replace('dieciseisavos','16vos').replace('octavos','8vos').replace('cuartos','Cuartos').replace('semifinal','Semi').replace('tercer_puesto','3er P.').replace('final','Final') : '' %></div>
         </div>
 
         <!-- Equipos y marcador/VS -->
@@ -153,7 +153,7 @@
           <!-- Abierto: formulario editable -->
           <div class="d-flex align-items-center gap-2 flex-wrap input-pron">
             <% if (p.pronostico) { %>
-            <span class="badge bg-success-subtle text-success border border-success-subtle small px-2">
+            <span class="badge bg-success-subtle text-success border border-success-subtle small px-2 badge-cargado">
               <i class="bi bi-check2 me-1"></i>Cargado
             </span>
             <% } %>
@@ -170,8 +170,20 @@
                 placeholder="0">
               <span class="text-muted small text-nowrap">:<%= p.visit_corto %></span>
             </div>
+            <% if (p.fase && p.fase !== 'grupos') { %>
+            <div class="clasif-wrap" style="display:none">
+              <select class="form-select form-select-sm sel-clasif" style="min-width:130px">
+                <option value="">¿Quién clasifica?</option>
+                <option value="<%= p.equipo_local_id %>"><%= p.local_bandera %> <%= p.local_corto %></option>
+                <option value="<%= p.equipo_visitante_id %>"><%= p.visit_bandera %> <%= p.visit_corto %></option>
+              </select>
+            </div>
+            <% } %>
             <button class="btn btn-sm btn-guardar <%= p.pronostico ? 'btn-outline-primary' : 'btn-primary' %>"
-              data-id="<%= p.id %>" data-local="<%= p.local_corto %>" data-visit="<%= p.visit_corto %>">
+              data-id="<%= p.id %>"
+              data-fase="<%= p.fase %>"
+              data-local-id="<%= p.equipo_local_id %>"
+              data-visit-id="<%= p.equipo_visitante_id %>">
               <i class="bi bi-save me-1"></i><%= p.pronostico ? 'Actualizar' : 'Guardar' %>
             </button>
             <span class="msg-pron small"></span>
@@ -186,10 +198,27 @@
 <% }) %>
 
 <script>
+// Mostrar/ocultar selector de clasificado en eliminatoria
+function actualizarClasif(row) {
+  const wrap = row.querySelector('.clasif-wrap');
+  if (!wrap) return;
+  const gl = row.querySelector('.pron-local').value;
+  const gv = row.querySelector('.pron-visit').value;
+  const esEmpate = gl !== '' && gv !== '' && parseInt(gl) === parseInt(gv);
+  wrap.style.display = esEmpate ? '' : 'none';
+}
+
+document.querySelectorAll('.partido-card').forEach(row => {
+  actualizarClasif(row);
+  row.querySelector('.pron-local')?.addEventListener('input', () => actualizarClasif(row));
+  row.querySelector('.pron-visit')?.addEventListener('input', () => actualizarClasif(row));
+});
+
 document.querySelectorAll('.btn-guardar').forEach(btn => {
   btn.addEventListener('click', async function () {
     const row = this.closest('.partido-card');
     const id = this.dataset.id;
+    const fase = this.dataset.fase;
     const gl = row.querySelector('.pron-local').value;
     const gv = row.querySelector('.pron-visit').value;
     const msg = row.querySelector('.msg-pron');
@@ -200,6 +229,22 @@ document.querySelectorAll('.btn-guardar').forEach(btn => {
       return;
     }
 
+    // Para eliminatoria: determinar clasificado
+    let clasificado_id = null;
+    if (fase && fase !== 'grupos') {
+      const esEmpate = parseInt(gl) === parseInt(gv);
+      if (esEmpate) {
+        clasificado_id = row.querySelector('.sel-clasif')?.value;
+        if (!clasificado_id) {
+          msg.textContent = 'Elegí quién clasifica';
+          msg.className = 'msg-pron small text-danger';
+          return;
+        }
+      } else {
+        clasificado_id = parseInt(gl) > parseInt(gv) ? this.dataset.localId : this.dataset.visitId;
+      }
+    }
+
     this.disabled = true;
     this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
@@ -207,7 +252,7 @@ document.querySelectorAll('.btn-guardar').forEach(btn => {
       const res = await fetch('/pronosticos/guardar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partido_id: id, goles_local: gl, goles_visitante: gv })
+        body: JSON.stringify({ partido_id: id, goles_local: gl, goles_visitante: gv, clasificado_id })
       });
       const data = await res.json();
 
