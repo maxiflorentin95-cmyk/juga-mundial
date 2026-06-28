@@ -1,5 +1,13 @@
 /* ─── JUGA Mundial 2026 – Estilos ─────────────────────────────── */
 
+/* Twemoji – tamaño inline consistente con el texto */
+img.emoji {
+  height: 1.2em;
+  width: 1.2em;
+  vertical-align: -0.2em;
+  display: inline-block;
+}
+
 :root {
   --juga-blue:   #0d6efd;
   --juga-green:  #198754;
