@@ -45,8 +45,10 @@
             </div>
           </div>
 
-          <div class="resultado-form" data-id="<%= p.id %>">
-            <label class="form-label small fw-bold d-block text-center mb-2">Resultado</label>
+          <div class="resultado-form" data-id="<%= p.id %>"
+               data-local-id="<%= p.equipo_local_id %>"
+               data-visit-id="<%= p.equipo_visitante_id %>">
+            <label class="form-label small fw-bold d-block text-center mb-2">Resultado (90')</label>
             <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
               <input type="number" class="form-control form-control-sm text-center fw-bold res-local"
                 min="0" max="30" style="width:65px"
@@ -58,6 +60,19 @@
                 value="<%= p.goles_visitante !== null ? p.goles_visitante : '' %>"
                 placeholder="0">
             </div>
+            <!-- Clasificado: quién avanza (obligatorio si hay empate en 90') -->
+            <label class="form-label small fw-bold d-block mb-1">¿Quién clasifica?</label>
+            <select class="form-select form-select-sm mb-2 sel-clasif"
+                    data-local-id="<%= p.equipo_local_id %>"
+                    data-visit-id="<%= p.equipo_visitante_id %>">
+              <option value="">— Auto por marcador —</option>
+              <option value="<%= p.equipo_local_id %>" <%= p.clasificado_id == p.equipo_local_id ? 'selected' : '' %>>
+                <%= p.local_bandera %> <%= p.local_corto || p.local_nombre %>
+              </option>
+              <option value="<%= p.equipo_visitante_id %>" <%= p.clasificado_id == p.equipo_visitante_id ? 'selected' : '' %>>
+                <%= p.visit_bandera %> <%= p.visit_corto || p.visit_nombre %>
+              </option>
+            </select>
             <button class="btn btn-danger btn-sm w-100 btn-resultado" data-id="<%= p.id %>">
               <i class="bi bi-save me-1"></i>
               <%= p.estado === 'finalizado' ? 'Modificar resultado' : 'Guardar resultado' %>
@@ -105,15 +120,27 @@ document.querySelectorAll('.btn-resultado').forEach(btn => {
   btn.addEventListener('click', async function () {
     const id = this.dataset.id;
     const card = document.getElementById('card-' + id);
-    const gl = card.querySelector('.res-local').value;
-    const gv = card.querySelector('.res-visit').value;
-    if (gl === '' || gv === '') { showToast('Ingresá ambos goles', false); return; }
+    const gl = parseInt(card.querySelector('.res-local').value);
+    const gv = parseInt(card.querySelector('.res-visit').value);
+    if (isNaN(gl) || isNaN(gv)) { showToast('Ingresá ambos goles', false); return; }
+
+    // Si hay empate en 90', el clasificado es obligatorio
+    let clasificado_id = card.querySelector('.sel-clasif').value || null;
+    if (gl === gv && !clasificado_id) {
+      showToast('Empate: seleccioná quién clasificó (penales/alargue)', false); return;
+    }
+    // Si no hay empate y no se eligió manual, auto-asignar por marcador
+    if (!clasificado_id) {
+      const form = card.querySelector('.resultado-form');
+      clasificado_id = gl > gv ? form.dataset.localId : form.dataset.visitId;
+    }
+
     this.disabled = true;
     this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
     try {
       const res = await fetch('/admin/resultado', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partido_id: id, goles_local: gl, goles_visitante: gv })
+        body: JSON.stringify({ partido_id: id, goles_local: gl, goles_visitante: gv, clasificado_id })
       });
       const data = await res.json();
       showToast(data.msg, data.ok);

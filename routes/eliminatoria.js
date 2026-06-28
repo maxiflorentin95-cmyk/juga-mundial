@@ -19,9 +19,11 @@ const FASE_LABEL = {
 router.get('/', requireLogin, async (req, res) => {
   try {
     const uid = req.session.usuario.id;
+    const faseActiva = req.query.fase || null;
 
     const partidos = await prepare(`
-      SELECT p.*, el.nombre AS local_nombre, el.bandera AS local_bandera, el.nombre_corto AS local_corto,
+      SELECT p.*,
+             el.nombre AS local_nombre, el.bandera AS local_bandera, el.nombre_corto AS local_corto,
              ev.nombre AS visit_nombre, ev.bandera AS visit_bandera, ev.nombre_corto AS visit_corto
       FROM partidos p
       JOIN equipos el ON p.equipo_local_id = el.id
@@ -33,7 +35,8 @@ router.get('/', requireLogin, async (req, res) => {
     if (partidos.length === 0) {
       return res.render('eliminatoria', {
         title: 'Fase Eliminatoria',
-        fases: [], porFase: {}, FASE_LABEL, sinPartidos: true,
+        fases: [], fasesDisponibles: [], porFase: {}, FASE_LABEL,
+        sinPartidos: true, faseActiva: null,
       });
     }
 
@@ -52,9 +55,19 @@ router.get('/', requireLogin, async (req, res) => {
       if (!porFase[p.fase]) porFase[p.fase] = [];
       porFase[p.fase].push(p);
     });
-    const fases = FASES.filter(f => porFase[f]);
 
-    res.render('eliminatoria', { title: 'Fase Eliminatoria', fases, porFase, FASE_LABEL, sinPartidos: false });
+    const fasesDisponibles = FASES.filter(f => porFase[f]);
+    const fasesFiltradas = (faseActiva && porFase[faseActiva]) ? [faseActiva] : fasesDisponibles;
+
+    res.render('eliminatoria', {
+      title: 'Fase Eliminatoria',
+      fases: fasesFiltradas,
+      fasesDisponibles,
+      porFase,
+      FASE_LABEL,
+      sinPartidos: false,
+      faseActiva,
+    });
   } catch (e) { console.error(e); res.status(500).send('Error'); }
 });
 

@@ -5,6 +5,10 @@ const { requireLogin } = require('../middleware/auth');
 // Cierre: 19 de junio 2026 13:00 Paraguay (UTC-3 fijo)
 const CIERRE = new Date('2026-06-19T13:00:00-03:00');
 
+// Extensión individual: estos usuarios pueden editar hasta CIERRE_EXTENSION
+const CIERRE_EXTENSION = new Date('2026-06-28T15:00:00-03:00');
+const USUARIOS_CON_EXTENSION = ['HugoLoup', 'MrPomberoPY'];
+
 const TIPOS_EQUIPO = ['campeon', 'segundo', 'tercero'];
 const TIPOS_VALIDOS = [...TIPOS_EQUIPO, 'goleador', 'mvp'];
 
@@ -16,8 +20,12 @@ const PUNTOS_ESPECIALES = {
   mvp:      10,
 };
 
-function estaCerrado() {
-  return new Date() >= CIERRE;
+function estaCerrado(username) {
+  const ahora = new Date();
+  if (username && USUARIOS_CON_EXTENSION.includes(username)) {
+    return ahora >= CIERRE_EXTENSION;
+  }
+  return ahora >= CIERRE;
 }
 
 router.get('/', requireLogin, async (req, res) => {
@@ -34,8 +42,9 @@ router.get('/', requireLogin, async (req, res) => {
     const miosMap = {};
     misProns.forEach(p => (miosMap[p.tipo] = p.valor));
 
+    const username = req.session.usuario.username;
     let distribucion = null;
-    if (estaCerrado()) {
+    if (estaCerrado(username)) {
       const rows = await Promise.all(TIPOS_VALIDOS.map(t =>
         prepare(`SELECT valor, COUNT(*) AS votos FROM pronosticos_especiales WHERE tipo=$1 GROUP BY valor ORDER BY votos DESC`).all(t)
       ));
@@ -53,7 +62,7 @@ router.get('/', requireLogin, async (req, res) => {
       title: 'Pronósticos Especiales',
       equipos,
       miosMap,
-      cerrado: estaCerrado(),
+      cerrado: estaCerrado(username),
       distribucion,
       resultados,
       puntosEspeciales: PUNTOS_ESPECIALES,
@@ -63,9 +72,9 @@ router.get('/', requireLogin, async (req, res) => {
 
 router.post('/guardar', requireLogin, async (req, res) => {
   try {
-    if (estaCerrado()) return res.json({ ok: false, msg: 'El plazo para pronósticos especiales ya cerró' });
-
     const uid = req.session.usuario.id;
+    const username = req.session.usuario.username;
+    if (estaCerrado(username)) return res.json({ ok: false, msg: 'El plazo para pronósticos especiales ya cerró' });
     const { tipo, valor } = req.body;
 
     if (!TIPOS_VALIDOS.includes(tipo))

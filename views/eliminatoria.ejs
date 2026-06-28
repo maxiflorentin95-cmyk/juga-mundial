@@ -4,7 +4,7 @@
   <a href="/dashboard" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
   <div>
     <h2 class="fw-bold mb-0"><i class="bi bi-diagram-3-fill text-warning me-2"></i>Fase Eliminatoria</h2>
-    <div class="text-muted small">Octavos · Cuartos · Semis · Final</div>
+    <div class="text-muted small">16avos · Octavos · Cuartos · Semis · Final</div>
   </div>
 </div>
 
@@ -13,13 +13,41 @@
   <div class="card-body text-center py-5">
     <i class="bi bi-hourglass-split text-muted" style="font-size:3rem"></i>
     <h5 class="mt-3 text-muted">La fase eliminatoria aún no comenzó</h5>
-    <p class="text-muted">Los partidos se cargarán cuando finalice la fase de grupos (a partir del 2 de julio).</p>
+    <p class="text-muted">Los partidos se cargarán cuando finalice la fase de grupos.</p>
     <a href="/grupos" class="btn btn-outline-primary mt-2">Ver fase de grupos</a>
   </div>
 </div>
 
 <% } else { %>
 
+<!-- Disclaimer de puntaje -->
+<div class="alert border-warning border-2 bg-warning bg-opacity-10 mb-3 py-2 px-3">
+  <div class="fw-bold small mb-1"><i class="bi bi-info-circle-fill text-warning me-1"></i>Reglas de puntaje — Fase Eliminatoria</div>
+  <div class="small text-muted">
+    El marcador se puntúa por los <strong>90 minutos reglamentarios</strong>. Alargue y penales solo definen quién pasa.
+  </div>
+  <div class="d-flex flex-wrap gap-2 mt-2" style="font-size:.75rem">
+    <span class="badge bg-warning text-dark">🎯 Exacto = 5 pts</span>
+    <span class="badge bg-success">≈ Diferencia = 3 pts</span>
+    <span class="badge bg-primary">✓ Ganador = 2 pts</span>
+    <span class="badge bg-secondary">= Empate acertado = 2 pts</span>
+    <span class="badge bg-info text-dark">🏅 Clasificado correcto = +2 pts</span>
+  </div>
+</div>
+
+<!-- Filtro de fases -->
+<% if (fasesDisponibles.length > 1) { %>
+<div class="d-flex gap-2 flex-wrap mb-3">
+  <a href="/eliminatoria" class="btn btn-sm <%= !faseActiva ? 'btn-dark' : 'btn-outline-dark' %>">Todas</a>
+  <% fasesDisponibles.forEach(f => { %>
+  <a href="/eliminatoria?fase=<%= f %>" class="btn btn-sm <%= faseActiva === f ? 'btn-warning' : 'btn-outline-secondary' %>">
+    <%= FASE_LABEL[f] %>
+  </a>
+  <% }) %>
+</div>
+<% } %>
+
+<!-- Partidos por fase -->
 <% fases.forEach(fase => { %>
 <div class="mb-4">
   <div class="d-flex align-items-center gap-2 mb-2">
@@ -71,9 +99,9 @@
             <span class="text-muted small">Tu pronóstico:</span>
             <span class="badge bg-dark px-2 py-1"><%= p.pronostico.goles_local %>–<%= p.pronostico.goles_visitante %></span>
             <span class="badge px-2 py-1
-              <%= p.pronostico.puntos_obtenidos===5 ? 'bg-warning text-dark' :
-                  p.pronostico.puntos_obtenidos===3 ? 'bg-success' :
-                  p.pronostico.puntos_obtenidos===2 ? 'bg-primary' : 'bg-secondary' %>">
+              <%= p.pronostico.puntos_obtenidos>=5 ? 'bg-warning text-dark' :
+                  p.pronostico.puntos_obtenidos>=3 ? 'bg-success' :
+                  p.pronostico.puntos_obtenidos>=2 ? 'bg-primary' : 'bg-secondary' %>">
               +<%= p.pronostico.puntos_obtenidos %> pts
             </span>
           </div>
@@ -91,12 +119,17 @@
           <span class="text-muted small fst-italic"><i class="bi bi-lock-fill"></i> No pronosticaste</span>
           <% } %>
         <% } else { %>
-          <div class="d-flex align-items-center gap-2 flex-wrap input-pron">
+          <div class="d-flex align-items-center gap-2 flex-wrap input-pron"
+               data-local-id="<%= p.equipo_local_id %>"
+               data-visit-id="<%= p.equipo_visitante_id %>"
+               data-local-nombre="<%= p.local_corto || p.local_nombre %>"
+               data-visit-nombre="<%= p.visit_corto || p.visit_nombre %>">
             <% if (p.pronostico) { %>
             <span class="badge bg-success-subtle text-success border border-success-subtle small px-2 badge-cargado">
               <i class="bi bi-check2 me-1"></i>Cargado
             </span>
             <% } %>
+            <!-- Inputs goles -->
             <div class="d-flex align-items-center gap-1">
               <input type="number" class="form-control form-control-sm text-center fw-bold pron-local"
                 min="0" max="20" style="width:52px"
@@ -106,12 +139,32 @@
                 min="0" max="20" style="width:52px"
                 value="<%= p.pronostico ? p.pronostico.goles_visitante : '' %>" placeholder="0">
             </div>
+            <!-- Selector clasificado (solo visible si empate) -->
+            <div class="clasif-wrap" style="display:none">
+              <select class="form-select form-select-sm sel-clasif" style="min-width:140px">
+                <option value="">¿Quién clasifica?</option>
+                <option value="<%= p.equipo_local_id %>"><%= p.local_bandera %> <%= p.local_corto || p.local_nombre %></option>
+                <option value="<%= p.equipo_visitante_id %>"><%= p.visit_bandera %> <%= p.visit_corto || p.visit_nombre %></option>
+              </select>
+            </div>
             <button class="btn btn-sm <%= p.pronostico ? 'btn-outline-primary' : 'btn-primary' %> btn-guardar"
-              data-id="<%= p.id %>">
+              data-id="<%= p.id %>"
+              data-local-id="<%= p.equipo_local_id %>"
+              data-visit-id="<%= p.equipo_visitante_id %>">
               <i class="bi bi-save me-1"></i><%= p.pronostico ? 'Actualizar' : 'Guardar' %>
             </button>
             <span class="msg-pron small"></span>
           </div>
+          <% if (p.pronostico && p.pronostico.clasificado_id) { %>
+          <div class="text-muted small mt-1">
+            <i class="bi bi-arrow-right-circle me-1"></i>Clasifica:
+            <% if (parseInt(p.pronostico.clasificado_id) === parseInt(p.equipo_local_id)) { %>
+              <%= p.local_bandera %> <%= p.local_corto || p.local_nombre %>
+            <% } else { %>
+              <%= p.visit_bandera %> <%= p.visit_corto || p.visit_nombre %>
+            <% } %>
+          </div>
+          <% } %>
         <% } %>
       </div>
 
@@ -122,24 +175,62 @@
 <% }) %>
 
 <script>
+// Mostrar/ocultar selector de clasificado según si el pronóstico es empate
+function actualizarClasif(row) {
+  const gl = row.querySelector('.pron-local').value;
+  const gv = row.querySelector('.pron-visit').value;
+  const wrap = row.querySelector('.clasif-wrap');
+  if (!wrap) return;
+  const esEmpate = gl !== '' && gv !== '' && parseInt(gl) === parseInt(gv);
+  wrap.style.display = esEmpate ? '' : 'none';
+  // Si no es empate, auto-seleccionar ganador en el select oculto
+  const sel = wrap.querySelector('.sel-clasif');
+  const btnLocalId = row.querySelector('.btn-guardar').dataset.localId;
+  const btnVisitId = row.querySelector('.btn-guardar').dataset.visitId;
+  if (!esEmpate) {
+    if (gl !== '' && gv !== '') {
+      sel.value = parseInt(gl) > parseInt(gv) ? btnLocalId : btnVisitId;
+    }
+  }
+}
+
+document.querySelectorAll('.input-pron').forEach(row => {
+  // Init estado inicial si ya hay valores cargados
+  actualizarClasif(row);
+  row.querySelector('.pron-local')?.addEventListener('input', () => actualizarClasif(row));
+  row.querySelector('.pron-visit')?.addEventListener('input', () => actualizarClasif(row));
+});
+
 document.querySelectorAll('.btn-guardar').forEach(btn => {
   btn.addEventListener('click', async function() {
     const row = this.closest('.partido-card');
+    const inputPron = row.querySelector('.input-pron');
     const id = this.dataset.id;
     const gl = row.querySelector('.pron-local').value;
     const gv = row.querySelector('.pron-visit').value;
     const msg = row.querySelector('.msg-pron');
+
     if (gl===''||gv==='') { msg.textContent='Ingresá ambos goles'; msg.className='msg-pron small text-danger'; return; }
+
+    // Determinar clasificado
+    const esEmpate = parseInt(gl) === parseInt(gv);
+    let clasificado_id = null;
+    if (esEmpate) {
+      clasificado_id = row.querySelector('.sel-clasif')?.value;
+      if (!clasificado_id) { msg.textContent='Elegí quién clasifica'; msg.className='msg-pron small text-danger'; return; }
+    } else {
+      clasificado_id = parseInt(gl) > parseInt(gv) ? this.dataset.localId : this.dataset.visitId;
+    }
+
     this.disabled = true;
     this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     try {
       const res = await fetch('/pronosticos/guardar', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({partido_id:id, goles_local:gl, goles_visitante:gv})
+        body: JSON.stringify({ partido_id: id, goles_local: gl, goles_visitante: gv, clasificado_id })
       });
       const data = await res.json();
       if (data.ok) {
-        const inputPron = row.querySelector('.input-pron');
         if (!inputPron.querySelector('.badge-cargado')) {
           const b = document.createElement('span');
           b.className = 'badge bg-success-subtle text-success border border-success-subtle small px-2 badge-cargado';

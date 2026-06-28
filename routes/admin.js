@@ -23,7 +23,13 @@ function calcularPuntos(pL, pV, rL, rV) {
   if (pL === rL && pV === rV) return 5;                          // exacto
   if ((pL - pV) === (rL - rV)) return 3;                        // diferencia correcta
   if (Math.sign(pL - pV) === Math.sign(rL - rV)) return 2;     // ganador correcto
+  if (pL === pV && rL === rV) return 2;                         // empate acertado (eliminatoria)
   return 0;
+}
+
+function calcularBonus(predClasifId, realClasifId) {
+  if (!predClasifId || !realClasifId) return 0;
+  return parseInt(predClasifId) === parseInt(realClasifId) ? 2 : 0;
 }
 
 router.get('/', requireAdmin, async (req, res) => {
@@ -59,13 +65,25 @@ router.get('/resultados/:grupo', requireAdmin, async (req, res) => {
 router.post('/resultado', requireAdmin, async (req, res) => {
   const client = await pool.connect();
   try {
-    const { partido_id, goles_local, goles_visitante } = req.body;
+    const { partido_id, goles_local, goles_visitante, clasificado_id } = req.body;
     const gl = parseInt(goles_local), gv = parseInt(goles_visitante);
     if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0)
       return res.json({ ok: false, msg: 'Valores inválidos' });
 
     const partido = await prepare('SELECT * FROM partidos WHERE id=$1').get(partido_id);
     if (!partido) return res.json({ ok: false, msg: 'Partido no encontrado' });
+
+    // Para eliminatoria: determinar quién clasificó
+    let realClasifId = null;
+    if (partido.fase && partido.fase !== 'grupos') {
+      if (clasificado_id) {
+        realClasifId = parseInt(clasificado_id);
+      } else if (gl > gv) {
+        realClasifId = partido.equipo_local_id;
+      } else if (gv > gl) {
+        realClasifId = partido.equipo_visitante_id;
+      }
+    }
 
     await client.query('BEGIN');
 
@@ -78,14 +96,16 @@ router.post('/resultado', requireAdmin, async (req, res) => {
       }
     }
 
-    // Guardar resultado
-    await client.query('UPDATE partidos SET goles_local=$1, goles_visitante=$2, estado=$3 WHERE id=$4',
-      [gl, gv, 'finalizado', partido_id]);
+    // Guardar resultado (con clasificado para eliminatoria)
+    await client.query('UPDATE partidos SET goles_local=$1, goles_visitante=$2, estado=$3, clasificado_id=$4 WHERE id=$5',
+      [gl, gv, 'finalizado', realClasifId, partido_id]);
 
-    // Calcular y asignar puntos
+    // Calcular y asignar puntos (base + bonus clasificado)
     const prons = await client.query('SELECT * FROM pronosticos WHERE partido_id=$1', [partido_id]);
     for (const pr of prons.rows) {
-      const pts = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
+      const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
+      const bonus = calcularBonus(pr.clasificado_id, realClasifId);
+      const pts   = base + bonus;
       await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
       await client.query('UPDATE usuarios SET puntos_total = puntos_total + $1 WHERE id=$2', [pts, pr.usuario_id]);
     }

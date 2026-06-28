@@ -129,7 +129,8 @@ async function sync() {
   console.log(`[sync] ${matches.length} partidos recibidos`);
 
   const dbPartidos = await prepare(`
-    SELECT p.id, p.estado, p.goles_local, p.goles_visitante, p.fecha, p.hora,
+    SELECT p.id, p.estado, p.fase, p.goles_local, p.goles_visitante, p.fecha, p.hora,
+           p.equipo_local_id AS local_id, p.equipo_visitante_id AS visit_id,
            el.nombre AS local_nombre, ev.nombre AS visit_nombre
     FROM partidos p
     JOIN equipos el ON p.equipo_local_id = el.id
@@ -186,8 +187,9 @@ async function sync() {
                  m.venue || '', m.area?.name || '');
 
           const newId = r.lastInsertRowid;
-          dbP = { id: newId, estado: 'pendiente', fecha: pyTime.fecha, hora: pyTime.hora,
-                  local_nombre: apiLocal, visit_nombre: apiVisit };
+          dbP = { id: newId, estado: 'pendiente', fase, fecha: pyTime.fecha, hora: pyTime.hora,
+                  local_nombre: apiLocal, visit_nombre: apiVisit,
+                  local_id: localId, visit_id: visitId };
           dbIdx[`${apiLocal}|${apiVisit}`] = dbP;
           insertados++;
           console.log(`[sync] ✚ Cruce insertado: ${apiLocal} vs ${apiVisit} (${fase}, ${pyTime.fecha} ${pyTime.hora})`);
@@ -214,6 +216,14 @@ async function sync() {
         const gv = m.score?.fullTime?.away;
         if (gl === null || gv === null || gl === undefined || gv === undefined) continue;
 
+        // Para eliminatoria: detectar clasificado desde score.winner
+        let realClasifId = null;
+        if (dbP.fase && dbP.fase !== 'grupos') {
+          const winner = m.score?.winner; // HOME_TEAM | AWAY_TEAM
+          if (winner === 'HOME_TEAM') realClasifId = dbP.local_id;
+          else if (winner === 'AWAY_TEAM') realClasifId = dbP.visit_id;
+        }
+
         try {
           await client.query('BEGIN');
 
@@ -228,24 +238,20 @@ async function sync() {
           }
 
           await client.query(
-            "UPDATE partidos SET goles_local=$1, goles_visitante=$2, estado='finalizado' WHERE id=$3",
-            [gl, gv, dbP.id]
+            "UPDATE partidos SET goles_local=$1, goles_visitante=$2, estado='finalizado', clasificado_id=$3 WHERE id=$4",
+            [gl, gv, realClasifId, dbP.id]
           );
 
           for (const pr of prons) {
-            const pts = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
-            await client.query(
-              'UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2',
-              [pts, pr.id]
-            );
-            await client.query(
-              'UPDATE usuarios SET puntos_total = puntos_total + $1 WHERE id=$2',
-              [pts, pr.usuario_id]
-            );
+            const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
+            const bonus = (pr.clasificado_id && realClasifId && parseInt(pr.clasificado_id) === parseInt(realClasifId)) ? 2 : 0;
+            const pts   = base + bonus;
+            await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
+            await client.query('UPDATE usuarios SET puntos_total = puntos_total + $1 WHERE id=$2', [pts, pr.usuario_id]);
           }
 
           await client.query('COMMIT');
-          console.log(`[sync] ✓ ${apiLocal} ${gl}-${gv} ${apiVisit} (${prons.length} pronósticos actualizados)`);
+          console.log(`[sync] ✓ ${apiLocal} ${gl}-${gv} ${apiVisit}${realClasifId ? ' (clasif.)' : ''} (${prons.length} prons actualizados)`);
           actualizados++;
         } catch (e) {
           await client.query('ROLLBACK');

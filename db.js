@@ -81,7 +81,8 @@ async function initSchema() {
       ciudad TEXT DEFAULT '',
       goles_local INTEGER,
       goles_visitante INTEGER,
-      estado TEXT DEFAULT 'pendiente'
+      estado TEXT DEFAULT 'pendiente',
+      clasificado_id INTEGER REFERENCES equipos(id)
     );
     CREATE TABLE IF NOT EXISTS pronosticos (
       id SERIAL PRIMARY KEY,
@@ -110,6 +111,8 @@ async function initSchema() {
       updated_at TIMESTAMP DEFAULT NOW()
     );
     ALTER TABLE pronosticos_especiales ADD COLUMN IF NOT EXISTS puntos_obtenidos INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE partidos ADD COLUMN IF NOT EXISTS clasificado_id INTEGER REFERENCES equipos(id);
+    ALTER TABLE pronosticos ADD COLUMN IF NOT EXISTS clasificado_id INTEGER REFERENCES equipos(id);
     CREATE TABLE IF NOT EXISTS trivia_preguntas (
       id SERIAL PRIMARY KEY,
       orden INTEGER NOT NULL UNIQUE,

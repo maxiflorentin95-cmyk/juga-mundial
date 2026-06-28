@@ -59,7 +59,7 @@ router.get('/', requireLogin, async (req, res) => {
 router.post('/guardar', requireLogin, async (req, res) => {
   try {
     const uid = req.session.usuario.id;
-    const { partido_id, goles_local, goles_visitante } = req.body;
+    const { partido_id, goles_local, goles_visitante, clasificado_id } = req.body;
     const partido = await prepare('SELECT * FROM partidos WHERE id=$1').get(partido_id);
     if (!partido) return res.json({ ok: false, msg: 'Partido no encontrado' });
     if (estaCerrado(partido.fecha, partido.hora))
@@ -69,14 +69,32 @@ router.post('/guardar', requireLogin, async (req, res) => {
     if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0 || gl > 20 || gv > 20)
       return res.json({ ok: false, msg: 'Valores inválidos' });
 
+    // Para eliminatoria: determinar clasificado
+    let clasifId = null;
+    if (partido.fase && partido.fase !== 'grupos') {
+      if (gl > gv) {
+        clasifId = partido.equipo_local_id;
+      } else if (gv > gl) {
+        clasifId = partido.equipo_visitante_id;
+      } else {
+        // Empate: el usuario debe elegir quién clasifica
+        const cid = parseInt(clasificado_id);
+        if (!cid || (cid !== parseInt(partido.equipo_local_id) && cid !== parseInt(partido.equipo_visitante_id))) {
+          return res.json({ ok: false, msg: 'Si pronosticás empate, debés elegir quién clasifica' });
+        }
+        clasifId = cid;
+      }
+    }
+
     await prepare(`
-      INSERT INTO pronosticos (usuario_id, partido_id, goles_local, goles_visitante, updated_at)
-      VALUES ($1,$2,$3,$4,NOW())
+      INSERT INTO pronosticos (usuario_id, partido_id, goles_local, goles_visitante, clasificado_id, updated_at)
+      VALUES ($1,$2,$3,$4,$5,NOW())
       ON CONFLICT(usuario_id, partido_id) DO UPDATE SET
         goles_local=EXCLUDED.goles_local,
         goles_visitante=EXCLUDED.goles_visitante,
+        clasificado_id=EXCLUDED.clasificado_id,
         updated_at=NOW()
-    `).run(uid, partido_id, gl, gv);
+    `).run(uid, partido_id, gl, gv, clasifId);
 
     res.json({ ok: true, msg: 'Guardado', gl, gv });
   } catch (e) {
