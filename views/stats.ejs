@@ -1,0 +1,112 @@
+<%- include('partials/header') %>
+
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+  <a href="/dashboard" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+  <h2 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Estadísticas</h2>
+</div>
+
+<div class="row g-4">
+
+  <!-- Mayores puntos -->
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-dark text-white fw-bold py-2">
+        <i class="bi bi-trophy-fill text-warning me-2"></i>Mayores puntos
+      </div>
+      <ul class="list-group list-group-flush">
+        <% mayoresPuntos.forEach((u, i) => { %>
+        <li class="list-group-item d-flex align-items-center justify-content-between py-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-muted" style="width:18px"><%= i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1) %></span>
+            <a href="/perfil/<%= u.username %>" class="text-decoration-none text-dark fw-semibold small"><%= u.username %></a>
+          </div>
+          <span class="badge bg-primary px-2 py-1"><%= u.puntos_total %> pts</span>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Más exactos -->
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-dark text-white fw-bold py-2">
+        <i class="bi bi-bullseye text-warning me-2"></i>Más exactos 🎯
+      </div>
+      <ul class="list-group list-group-flush">
+        <% masExactos.forEach((u, i) => { %>
+        <li class="list-group-item d-flex align-items-center justify-content-between py-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-muted" style="width:18px"><%= i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1) %></span>
+            <a href="/perfil/<%= u.username %>" class="text-decoration-none text-dark fw-semibold small"><%= u.username %></a>
+          </div>
+          <span class="badge bg-success px-2 py-1"><%= u.exactos %></span>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Más no exactos (con resultado pero sin exacto) -->
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-dark text-white fw-bold py-2">
+        <i class="bi bi-check2-circle text-info me-2"></i>Más no exactos ✅
+      </div>
+      <ul class="list-group list-group-flush">
+        <% masNoExactos.forEach((u, i) => { %>
+        <li class="list-group-item d-flex align-items-center justify-content-between py-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-muted" style="width:18px"><%= i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1) %></span>
+            <a href="/perfil/<%= u.username %>" class="text-decoration-none text-dark fw-semibold small"><%= u.username %></a>
+          </div>
+          <span class="badge bg-info text-dark px-2 py-1"><%= u.no_exactos %></span>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Mejor porcentaje -->
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-dark text-white fw-bold py-2">
+        <i class="bi bi-percent text-warning me-2"></i>Mejor porcentaje
+      </div>
+      <ul class="list-group list-group-flush">
+        <% mejorPorcentaje.forEach((u, i) => { %>
+        <li class="list-group-item d-flex align-items-center justify-content-between py-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-muted" style="width:18px"><%= i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1) %></span>
+            <a href="/perfil/<%= u.username %>" class="text-decoration-none text-dark fw-semibold small"><%= u.username %></a>
+          </div>
+          <span class="badge px-2 py-1 <%= u.porcentaje >= 60 ? 'bg-warning text-dark' : u.porcentaje >= 50 ? 'bg-success' : 'bg-secondary' %>"><%= u.porcentaje %>%</span>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Más activos -->
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-dark text-white fw-bold py-2">
+        <i class="bi bi-fire text-danger me-2"></i>Más activos 🔥
+      </div>
+      <ul class="list-group list-group-flush">
+        <% masActivos.forEach((u, i) => { %>
+        <li class="list-group-item d-flex align-items-center justify-content-between py-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-muted" style="width:18px"><%= i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1) %></span>
+            <a href="/perfil/<%= u.username %>" class="text-decoration-none text-dark fw-semibold small"><%= u.username %></a>
+          </div>
+          <span class="badge bg-danger px-2 py-1"><%= u.total_pron %></span>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<%- include('partials/footer') %>

@@ -74,6 +74,9 @@
       <a class="nav-link text-warning <%= title==='Trivia Mundial' ? 'fw-bold' : '' %>" href="/trivia">
         <i class="bi bi-patch-question-fill"></i> Trivia
       </a>
+      <a class="nav-link text-light <%= title==='Estadísticas' ? 'fw-bold' : '' %>" href="/stats">
+        <i class="bi bi-bar-chart-fill"></i> Stats
+      </a>
       <a class="nav-link text-light <%= title==='Ranking' ? 'fw-bold' : '' %>" href="/ranking">
         <i class="bi bi-trophy-fill"></i> Ranking
       </a>
@@ -113,6 +116,10 @@
     </span>
     <% } %>
     <span>Pronósticos</span>
+  </a>
+  <a href="/stats" class="<%= title==='Estadísticas' ? 'active' : '' %>">
+    <i class="bi bi-bar-chart-fill"></i>
+    <span>Stats</span>
   </a>
   <a href="/ranking" class="<%= title==='Ranking' ? 'active' : '' %>">
     <i class="bi bi-trophy-fill"></i>
