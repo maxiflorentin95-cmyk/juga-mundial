@@ -719,6 +719,92 @@ router.post('/importar-puntos', requireAdmin, async (req, res) => {
   res.json({ ok: true, resultados });
 });
 
+// ── ELIMINATORIA ──────────────────────────────────────────────────────────────
+
+// Listar todos los equipos (para el selector de cruces)
+router.get('/equipos-lista', requireAdmin, async (req, res) => {
+  try {
+    const equipos = await prepare('SELECT id, nombre, nombre_corto, bandera, grupo FROM equipos ORDER BY grupo, nombre').all();
+    res.json(equipos);
+  } catch (e) { res.json([]); }
+});
+
+// Agregar un partido de eliminatoria
+router.post('/agregar-partido-eliminatoria', requireAdmin, async (req, res) => {
+  try {
+    const { local_id, visit_id, fase, fecha, hora, estadio, ciudad } = req.body;
+    if (!local_id || !visit_id || !fase || !fecha || !hora)
+      return res.json({ ok: false, msg: 'Faltan campos obligatorios' });
+    if (local_id === visit_id)
+      return res.json({ ok: false, msg: 'Local y visitante no pueden ser el mismo equipo' });
+
+    const fases_validas = ['octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
+    if (!fases_validas.includes(fase))
+      return res.json({ ok: false, msg: 'Fase inválida' });
+
+    const r = await prepare(`
+      INSERT INTO partidos (fase, grupo, equipo_local_id, equipo_visitante_id, fecha, hora, estadio, ciudad, estado)
+      VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, 'pendiente')
+    `).run(fase, local_id, visit_id, fecha, hora, estadio || '', ciudad || '');
+
+    res.json({ ok: true, msg: `✓ Partido de ${fase} agregado correctamente`, id: r.lastInsertRowid });
+  } catch (e) {
+    console.error(e);
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
+// Eliminar un partido de eliminatoria (solo si no tiene pronósticos)
+router.post('/eliminar-partido-eliminatoria', requireAdmin, async (req, res) => {
+  try {
+    const { partido_id } = req.body;
+    const partido = await prepare(
+      'SELECT p.*, el.nombre AS local, ev.nombre AS visit FROM partidos p JOIN equipos el ON p.equipo_local_id=el.id JOIN equipos ev ON p.equipo_visitante_id=ev.id WHERE p.id=$1'
+    ).get(partido_id);
+    if (!partido) return res.json({ ok: false, msg: 'Partido no encontrado' });
+    if (partido.fase === 'grupos') return res.json({ ok: false, msg: 'No se pueden eliminar partidos de grupos' });
+
+    const prons = await prepare('SELECT COUNT(*) AS c FROM pronosticos WHERE partido_id=$1').get(partido_id);
+    if (prons.c > 0) return res.json({ ok: false, msg: `No se puede eliminar: tiene ${prons.c} pronósticos. Limpiá los pronósticos primero.` });
+
+    await prepare('DELETE FROM partidos WHERE id=$1').run(partido_id);
+    res.json({ ok: true, msg: `✓ Partido "${partido.local} vs ${partido.visit}" eliminado` });
+  } catch (e) {
+    console.error(e);
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
+// Ver resultados de eliminatoria
+router.get('/resultados-eliminatoria', requireAdmin, async (req, res) => {
+  try {
+    const FASES = ['octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
+    const FASE_LABEL = {
+      octavos: 'Octavos de Final', cuartos: 'Cuartos de Final',
+      semifinal: 'Semifinales', tercer_puesto: 'Tercer Puesto', final: 'Gran Final',
+    };
+
+    const partidos = await prepare(`
+      SELECT p.*, el.nombre AS local_nombre, el.bandera AS local_bandera, el.nombre_corto AS local_corto,
+             ev.nombre AS visit_nombre, ev.bandera AS visit_bandera, ev.nombre_corto AS visit_corto
+      FROM partidos p
+      JOIN equipos el ON p.equipo_local_id = el.id
+      JOIN equipos ev ON p.equipo_visitante_id = ev.id
+      WHERE p.fase != 'grupos'
+      ORDER BY ARRAY_POSITION(ARRAY['octavos','cuartos','semifinal','tercer_puesto','final']::text[], p.fase), p.fecha, p.hora
+    `).all();
+
+    const porFase = {};
+    partidos.forEach(p => {
+      if (!porFase[p.fase]) porFase[p.fase] = [];
+      porFase[p.fase].push(p);
+    });
+    const fases = FASES.filter(f => porFase[f]);
+
+    res.render('admin/resultados-eliminatoria', { title: 'Resultados Eliminatoria', fases, porFase, FASE_LABEL });
+  } catch (e) { console.error(e); res.status(500).send('Error'); }
+});
+
 router.post('/importar-usuarios', requireAdmin, async (req, res) => {
   const hash = bcrypt.hashSync('mundial2026', 10);
   const resultados = [];

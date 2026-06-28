@@ -170,6 +170,83 @@
     </div>
   </div>
 
+  <!-- Fase Eliminatoria -->
+  <div class="col-12">
+    <div class="card border-0 shadow-sm border-warning">
+      <div class="card-header bg-warning text-dark fw-bold">
+        <i class="bi bi-diagram-3-fill me-2"></i>Fase Eliminatoria
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <!-- Agregar cruce -->
+          <div class="col-12 col-lg-7">
+            <p class="text-muted small mb-2">Agregá los cruces a medida que se definan. Elegí los equipos, la fase, fecha y hora (hora Paraguay).</p>
+            <div class="row g-2" id="form-elim">
+              <div class="col-12 col-sm-5">
+                <label class="form-label small fw-semibold mb-1">Local</label>
+                <select id="elim-local" class="form-select form-select-sm">
+                  <option value="">— Cargar equipos —</option>
+                </select>
+              </div>
+              <div class="col-12 col-sm-5">
+                <label class="form-label small fw-semibold mb-1">Visitante</label>
+                <select id="elim-visit" class="form-select form-select-sm">
+                  <option value="">— Cargar equipos —</option>
+                </select>
+              </div>
+              <div class="col-12 col-sm-2 d-flex align-items-end">
+                <button id="btnCargarEquipos" class="btn btn-outline-warning btn-sm w-100">
+                  <i class="bi bi-arrow-repeat"></i> Cargar
+                </button>
+              </div>
+              <div class="col-12 col-sm-4">
+                <label class="form-label small fw-semibold mb-1">Fase</label>
+                <select id="elim-fase" class="form-select form-select-sm">
+                  <option value="octavos">Octavos de Final</option>
+                  <option value="cuartos">Cuartos de Final</option>
+                  <option value="semifinal">Semifinales</option>
+                  <option value="tercer_puesto">Tercer Puesto</option>
+                  <option value="final">Gran Final</option>
+                </select>
+              </div>
+              <div class="col-6 col-sm-4">
+                <label class="form-label small fw-semibold mb-1">Fecha</label>
+                <input type="date" id="elim-fecha" class="form-control form-control-sm">
+              </div>
+              <div class="col-6 col-sm-4">
+                <label class="form-label small fw-semibold mb-1">Hora (PY)</label>
+                <input type="time" id="elim-hora" class="form-control form-control-sm">
+              </div>
+              <div class="col-12 col-sm-6">
+                <label class="form-label small fw-semibold mb-1">Estadio <span class="text-muted">(opcional)</span></label>
+                <input type="text" id="elim-estadio" class="form-control form-control-sm" placeholder="Ej: MetLife Stadium">
+              </div>
+              <div class="col-12 col-sm-6">
+                <label class="form-label small fw-semibold mb-1">Ciudad <span class="text-muted">(opcional)</span></label>
+                <input type="text" id="elim-ciudad" class="form-control form-control-sm" placeholder="Ej: East Rutherford">
+              </div>
+              <div class="col-12">
+                <button id="btnAgregarCruce" class="btn btn-warning">
+                  <i class="bi bi-plus-circle me-1"></i>Agregar cruce
+                </button>
+                <span id="msg-elim" class="small ms-2"></span>
+              </div>
+            </div>
+          </div>
+          <!-- Ir a resultados -->
+          <div class="col-12 col-lg-5 d-flex flex-column justify-content-center gap-2">
+            <a href="/admin/resultados-eliminatoria" class="btn btn-warning">
+              <i class="bi bi-pencil-fill me-2"></i>Cargar resultados de eliminatoria
+            </a>
+            <a href="/eliminatoria" class="btn btn-outline-warning" target="_blank">
+              <i class="bi bi-eye me-2"></i>Ver como usuario
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Normalizar especiales -->
   <div class="col-12 col-md-6">
     <div class="card border-0 shadow-sm">
@@ -475,6 +552,73 @@ document.getElementById('btn-normalizar').addEventListener('click', async functi
     msg.innerHTML = `<span class="${r.ok ? 'text-success' : 'text-danger'}">${r.msg}</span>`;
   } catch(e) { msg.innerHTML = '<span class="text-danger">Error de red</span>'; }
   this.disabled = false;
+});
+
+// Fase eliminatoria – cargar equipos
+let equiposCache = null;
+document.getElementById('btnCargarEquipos').addEventListener('click', async function() {
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+  try {
+    if (!equiposCache) {
+      equiposCache = await fetch('/admin/equipos-lista').then(r => r.json());
+    }
+    ['elim-local', 'elim-visit'].forEach(selId => {
+      const sel = document.getElementById(selId);
+      sel.innerHTML = '<option value="">— Seleccioná —</option>';
+      let grupoActual = '';
+      equiposCache.forEach(e => {
+        if (e.grupo !== grupoActual) {
+          grupoActual = e.grupo;
+          const og = document.createElement('optgroup');
+          og.label = 'Grupo ' + e.grupo;
+          sel.appendChild(og);
+        }
+        const opt = document.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.bandera + ' ' + e.nombre;
+        sel.lastChild.appendChild(opt);
+      });
+    });
+  } catch(e) { document.getElementById('msg-elim').textContent = 'Error al cargar equipos'; }
+  this.disabled = false;
+  this.innerHTML = '<i class="bi bi-arrow-repeat"></i> Recargar';
+});
+
+document.getElementById('btnAgregarCruce').addEventListener('click', async function() {
+  const local_id = document.getElementById('elim-local').value;
+  const visit_id = document.getElementById('elim-visit').value;
+  const fase     = document.getElementById('elim-fase').value;
+  const fecha    = document.getElementById('elim-fecha').value;
+  const hora     = document.getElementById('elim-hora').value;
+  const estadio  = document.getElementById('elim-estadio').value.trim();
+  const ciudad   = document.getElementById('elim-ciudad').value.trim();
+  const msg      = document.getElementById('msg-elim');
+
+  if (!local_id || !visit_id || !fecha || !hora) {
+    msg.innerHTML = '<span class="text-danger">Completá local, visitante, fecha y hora</span>';
+    return;
+  }
+  if (local_id === visit_id) {
+    msg.innerHTML = '<span class="text-danger">Local y visitante deben ser distintos</span>';
+    return;
+  }
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Agregando...';
+  try {
+    const r = await fetch('/admin/agregar-partido-eliminatoria', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ local_id, visit_id, fase, fecha, hora, estadio, ciudad })
+    }).then(x => x.json());
+    msg.innerHTML = `<span class="${r.ok ? 'text-success' : 'text-danger'}">${r.msg}</span>`;
+    if (r.ok) {
+      // limpiar selects de equipos para el próximo cruce
+      document.getElementById('elim-local').value = '';
+      document.getElementById('elim-visit').value = '';
+    }
+  } catch(e) { msg.innerHTML = '<span class="text-danger">Error de red</span>'; }
+  this.disabled = false;
+  this.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Agregar cruce';
 });
 
 // Resultados especiales
