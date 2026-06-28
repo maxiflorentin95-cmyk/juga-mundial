@@ -38,7 +38,7 @@ router.get('/', requireLogin, async (req, res) => {
       if (!porFecha[p.fecha]) porFecha[p.fecha] = [];
       porFecha[p.fecha].push(p);
     });
-    const fechas = Object.keys(porFecha).sort();
+    const fechas = Object.keys(porFecha).sort().reverse();
 
     const stats = await prepare(`
       SELECT
