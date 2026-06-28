@@ -69,6 +69,22 @@ router.get('/', requireLogin, async (req, res) => {
       porcentaje: u.total_pron > 0 ? Math.round((u.con_puntos / u.total_pron) * 100) : 0,
     }));
 
+    const mufaTop = await prepare(`
+      SELECT u.username, u.id, COUNT(*) AS veces_mufa
+      FROM pronosticos pr
+      JOIN partidos p ON pr.partido_id = p.id
+      JOIN usuarios u ON pr.usuario_id = u.id
+      WHERE p.estado = 'finalizado'
+        AND (
+          (pr.goles_local > pr.goles_visitante AND p.goles_local < p.goles_visitante)
+          OR
+          (pr.goles_visitante > pr.goles_local AND p.goles_visitante < p.goles_local)
+        )
+      GROUP BY u.id, u.username
+      ORDER BY veces_mufa DESC
+      LIMIT 5
+    `).all();
+
     const statsPartidos = await prepare(`
       SELECT p.id, p.fase, p.grupo, p.goles_local, p.goles_visitante,
              el.nombre AS local_nombre, el.bandera AS local_bandera,
@@ -100,6 +116,7 @@ router.get('/', requireLogin, async (req, res) => {
       mejorPorcentaje,
       masAcertados,
       masDificiles,
+      mufaTop,
     });
   } catch (e) { console.error(e); res.status(500).send('Error'); }
 });

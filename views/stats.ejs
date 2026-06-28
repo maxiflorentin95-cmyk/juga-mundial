@@ -87,6 +87,26 @@
     </div>
   </div>
 
+  <!-- El Mufa -->
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-dark text-white fw-bold py-2">
+        <i class="bi bi-emoji-dizzy text-danger me-2"></i>El Mufa 🫠
+      </div>
+      <ul class="list-group list-group-flush">
+        <% mufaTop.forEach((u, i) => { %>
+        <li class="list-group-item d-flex align-items-center justify-content-between py-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-muted" style="width:18px"><%= i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1) %></span>
+            <a href="/perfil/<%= u.username %>" class="text-decoration-none text-dark fw-semibold small"><%= u.username %></a>
+          </div>
+          <span class="badge bg-danger px-2 py-1"><%= u.veces_mufa %> veces</span>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+
   <!-- Más activos -->
   <div class="col-12 col-md-6 col-xl-4">
     <div class="card border-0 shadow-sm h-100">
