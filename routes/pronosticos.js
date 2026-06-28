@@ -18,7 +18,7 @@ router.get('/', requireLogin, async (req, res) => {
       FROM partidos p
       JOIN equipos el ON p.equipo_local_id = el.id
       JOIN equipos ev ON p.equipo_visitante_id = ev.id
-      ORDER BY p.fecha, p.hora
+      ORDER BY p.fecha DESC, p.hora DESC
     `).all();
 
     // Todos los pronósticos del usuario en un solo query
