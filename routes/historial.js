@@ -39,10 +39,10 @@ router.get('/', requireLogin, async (req, res) => {
       if (p) {
         const cerrado = estaCerrado(p.fecha, p.hora);
 
-        // Obtener todos los pronósticos (con username)
+        // Obtener todos los pronósticos (con username y clasificado)
         const prons = await prepare(`
           SELECT pr.goles_local, pr.goles_visitante, pr.puntos_obtenidos,
-                 pr.created_at, pr.updated_at, u.username
+                 pr.clasificado_id, pr.created_at, pr.updated_at, u.username
           FROM pronosticos pr
           JOIN usuarios u ON pr.usuario_id = u.id
           WHERE pr.partido_id = $1
@@ -58,12 +58,22 @@ router.get('/', requireLogin, async (req, res) => {
           else v++;
         }
 
+        // Para partidos eliminatorios: calcular bonus por clasificado
+        const esEliminatoria = p.fase && p.fase !== 'grupos';
+        const pronosEnriquecidos = prons.map(pr => {
+          if (!esEliminatoria || !p.clasificado_id) return { ...pr, puntos_bonus: 0 };
+          const bonus = pr.clasificado_id && parseInt(pr.clasificado_id) === parseInt(p.clasificado_id) ? 2 : 0;
+          const base  = pr.puntos_obtenidos - bonus;
+          return { ...pr, puntos_base: base, puntos_bonus: bonus };
+        });
+
         detalle = {
           ...p,
           cerrado,
-          prons: cerrado ? prons : [],  // revela cuando el partido ya empezó
+          esEliminatoria,
+          prons: cerrado ? pronosEnriquecidos : [],
           total_prons: total,
-          sin_cargar: null, // se calcula abajo
+          sin_cargar: null,
           exactos:    prons.filter(x => x.puntos_obtenidos === 5).length,
           diferencia: prons.filter(x => x.puntos_obtenidos === 3).length,
           ganador:    prons.filter(x => x.puntos_obtenidos === 2).length,

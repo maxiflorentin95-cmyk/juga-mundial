@@ -147,16 +147,23 @@
             <span class="badge bg-dark fs-6 px-3"><%= pr.goles_local %> – <%= pr.goles_visitante %></span>
           </td>
           <td class="text-center">
-            <% if (pr.puntos_obtenidos === 5) { %>
-              <span class="badge bg-warning text-dark px-3 py-2">🎯 5</span>
-            <% } else if (pr.puntos_obtenidos === 3) { %>
-              <span class="badge bg-success px-3 py-2">≈ 3</span>
-            <% } else if (pr.puntos_obtenidos === 2) { %>
-              <span class="badge bg-primary px-3 py-2">✓ 2</span>
-            <% } else if (pr.puntos_obtenidos === 0) { %>
-              <span class="badge bg-secondary px-3 py-2">✗ 0</span>
+            <%
+              const base  = detalle.esEliminatoria ? (pr.puntos_base !== undefined ? pr.puntos_base : pr.puntos_obtenidos) : pr.puntos_obtenidos;
+              const bonus = detalle.esEliminatoria ? (pr.puntos_bonus || 0) : 0;
+            %>
+            <% if (base === 5) { %>
+              <span class="badge bg-warning text-dark px-2 py-2">🎯 5</span>
+            <% } else if (base === 3) { %>
+              <span class="badge bg-success px-2 py-2">≈ 3</span>
+            <% } else if (base === 2) { %>
+              <span class="badge bg-primary px-2 py-2">✓ 2</span>
+            <% } else if (base === 0) { %>
+              <span class="badge bg-secondary px-2 py-2">✗ 0</span>
             <% } else { %>
-              <span class="badge bg-light text-dark px-3 py-2">–</span>
+              <span class="badge bg-light text-dark px-2 py-2"><%= base %></span>
+            <% } %>
+            <% if (bonus > 0) { %>
+              <span class="badge bg-info text-dark px-2 py-2 ms-1">🏅 +<%= bonus %></span>
             <% } %>
           </td>
         </tr>
