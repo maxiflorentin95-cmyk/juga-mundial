@@ -30,9 +30,9 @@ function calcularPuntos(pL, pV, rL, rV) {
 function calcularBonus(predClasifId, realClasifId, predGL, predGV) {
   if (!predClasifId || !realClasifId) return 0;
   if (parseInt(predClasifId) !== parseInt(realClasifId)) return 0;
-  // Empate pronosticado → +1, ganador pronosticado → +2
+  // Bonus solo si pronosticó empate y acertó quién clasifica
   const esEmpate = parseInt(predGL) === parseInt(predGV);
-  return esEmpate ? 1 : 2;
+  return esEmpate ? 1 : 0;
 }
 
 router.get('/', requireAdmin, async (req, res) => {
