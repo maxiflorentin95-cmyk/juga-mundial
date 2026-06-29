@@ -6,7 +6,7 @@ const { requireLogin } = require('../middleware/auth');
 const CIERRE = new Date('2026-06-29T23:59:00-03:00');
 
 // Extensión individual: estos usuarios pueden editar hasta CIERRE_EXTENSION
-const CIERRE_EXTENSION = new Date('2026-06-28T15:00:00-03:00');
+const CIERRE_EXTENSION = new Date('2026-06-29T23:59:00-03:00');
 const USUARIOS_CON_EXTENSION = ['HugoLoup', 'MrPomberoPY'];
 
 const TIPOS_EQUIPO = ['campeon', 'segundo', 'tercero'];
