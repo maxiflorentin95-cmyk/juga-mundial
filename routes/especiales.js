@@ -2,11 +2,11 @@ const router = require('express').Router();
 const { prepare } = require('../db');
 const { requireLogin } = require('../middleware/auth');
 
-// Cierre: reabierto temporalmente 29 jun 2026
-const CIERRE = new Date('2026-06-29T23:59:00-03:00');
+// Cierre: 19 de junio 2026 13:00 Paraguay (UTC-3 fijo)
+const CIERRE = new Date('2026-06-19T13:00:00-03:00');
 
 // Extensión individual: estos usuarios pueden editar hasta CIERRE_EXTENSION
-const CIERRE_EXTENSION = new Date('2026-06-29T23:59:00-03:00');
+const CIERRE_EXTENSION = new Date('2026-06-28T15:00:00-03:00');
 const USUARIOS_CON_EXTENSION = ['HugoLoup', 'MrPomberoPY'];
 
 const TIPOS_EQUIPO = ['campeon', 'segundo', 'tercero'];
