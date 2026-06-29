@@ -27,9 +27,12 @@ function calcularPuntos(pL, pV, rL, rV) {
   return 0;
 }
 
-function calcularBonus(predClasifId, realClasifId) {
+function calcularBonus(predClasifId, realClasifId, predGL, predGV) {
   if (!predClasifId || !realClasifId) return 0;
-  return parseInt(predClasifId) === parseInt(realClasifId) ? 2 : 0;
+  if (parseInt(predClasifId) !== parseInt(realClasifId)) return 0;
+  // Empate pronosticado → +1, ganador pronosticado → +2
+  const esEmpate = parseInt(predGL) === parseInt(predGV);
+  return esEmpate ? 1 : 2;
 }
 
 router.get('/', requireAdmin, async (req, res) => {
@@ -104,7 +107,7 @@ router.post('/resultado', requireAdmin, async (req, res) => {
     const prons = await client.query('SELECT * FROM pronosticos WHERE partido_id=$1', [partido_id]);
     for (const pr of prons.rows) {
       const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
-      const bonus = calcularBonus(pr.clasificado_id, realClasifId);
+      const bonus = calcularBonus(pr.clasificado_id, realClasifId, pr.goles_local, pr.goles_visitante);
       const pts   = base + bonus;
       await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
       await client.query('UPDATE usuarios SET puntos_total = puntos_total + $1 WHERE id=$2', [pts, pr.usuario_id]);
@@ -912,7 +915,7 @@ router.post('/recalcular-clasificado', requireAdmin, async (req, res) => {
 
       // Recalcular puntos con bonus
       const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
-      const bonus = calcularBonus(predClasifId, realClasifId);
+      const bonus = calcularBonus(predClasifId, realClasifId, pr.goles_local, pr.goles_visitante);
       const pts   = base + bonus;
 
       await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
