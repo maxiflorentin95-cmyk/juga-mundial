@@ -19,20 +19,17 @@ const USUARIOS_IMPORTAR = [
   { username: 'JoeAlca',     nombre: 'Joel Alcaraz',        email: 'joelalcaraz6@gmail.com',                 admin: 0 },
 ];
 
-function calcularPuntos(pL, pV, rL, rV, esEliminatoria = false) {
-  if (pL === rL && pV === rV) return 5;                                         // exacto
-  if (esEliminatoria && pL === pV && rL === rV) return 2;                       // empate acertado (eliminatoria)
-  if ((pL - pV) === (rL - rV)) return 3;                                        // diferencia correcta
-  if (Math.sign(pL - pV) === Math.sign(rL - rV)) return 2;                     // ganador correcto
+function calcularPuntos(pL, pV, rL, rV) {
+  pL = parseInt(pL); pV = parseInt(pV); rL = parseInt(rL); rV = parseInt(rV);
+  if (pL === rL && pV === rV)                       return 5;  // exacto
+  if ((pL - pV) === (rL - rV))                     return 3;  // diferencia exacta
+  if (Math.sign(pL - pV) === Math.sign(rL - rV))   return 2;  // resultado correcto
   return 0;
 }
 
-function calcularBonus(predClasifId, realClasifId, predGL, predGV) {
+function calcularBonus(predClasifId, realClasifId) {
   if (!predClasifId || !realClasifId) return 0;
-  if (parseInt(predClasifId) !== parseInt(realClasifId)) return 0;
-  // Bonus solo si pronosticó empate y acertó quién clasifica
-  const esEmpate = parseInt(predGL) === parseInt(predGV);
-  return esEmpate ? 1 : 0;
+  return parseInt(predClasifId) === parseInt(realClasifId) ? 1 : 0;
 }
 
 router.get('/', requireAdmin, async (req, res) => {
@@ -107,8 +104,8 @@ router.post('/resultado', requireAdmin, async (req, res) => {
     const prons = await client.query('SELECT * FROM pronosticos WHERE partido_id=$1', [partido_id]);
     const esEliminatoria = partido.fase && partido.fase !== 'grupos';
     for (const pr of prons.rows) {
-      const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv, esEliminatoria);
-      const bonus = calcularBonus(pr.clasificado_id, realClasifId);
+      const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
+      const bonus = esEliminatoria ? calcularBonus(pr.clasificado_id, realClasifId) : 0;
       const pts   = base + bonus;
       await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
       await client.query('UPDATE usuarios SET puntos_total = puntos_total + $1 WHERE id=$2', [pts, pr.usuario_id]);
@@ -277,8 +274,7 @@ router.post('/recalcular-eliminatoria', requireAdmin, async (req, res) => {
     for (const partido of partidos) {
       const { rows: prons } = await client.query('SELECT * FROM pronosticos WHERE partido_id=$1', [partido.id]);
       for (const pr of prons) {
-        const esEliminatoria = true;
-        const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, partido.goles_local, partido.goles_visitante, esEliminatoria);
+        const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, partido.goles_local, partido.goles_visitante);
         const bonus = calcularBonus(pr.clasificado_id, partido.clasificado_id);
         const pts   = base + bonus;
         await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);

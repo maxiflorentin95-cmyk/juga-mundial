@@ -6,12 +6,11 @@ function estaCerrado(fecha, hora) {
   return new Date() >= new Date(`${fecha}T${hora}:00-03:00`);
 }
 
-function calcBase(pL, pV, rL, rV, esElim) {
+function calcBase(pL, pV, rL, rV) {
   pL = parseInt(pL); pV = parseInt(pV); rL = parseInt(rL); rV = parseInt(rV);
-  if (pL === rL && pV === rV) return 5;
-  if (esElim && pL === pV && rL === rV) return 2;
-  if ((pL - pV) === (rL - rV)) return 3;
-  if (Math.sign(pL - pV) === Math.sign(rL - rV)) return 2;
+  if (pL === rL && pV === rV)                       return 5;
+  if ((pL - pV) === (rL - rV))                     return 3;
+  if (Math.sign(pL - pV) === Math.sign(rL - rV))   return 2;
   return 0;
 }
 
@@ -72,9 +71,9 @@ router.get('/', requireLogin, async (req, res) => {
         // Enriquecer cada pron con base_pts y bonus_pts calculados desde los goles
         const pronsEnriq = prons.map(pr => {
           if (p.estado !== 'finalizado') return { ...pr, base_pts: null, bonus_pts: null };
-          const base = calcBase(pr.goles_local, pr.goles_visitante, p.goles_local, p.goles_visitante, esElim);
+          const base = calcBase(pr.goles_local, pr.goles_visitante, p.goles_local, p.goles_visitante);
           const bonus = esElim && pr.clasificado_id && p.clasificado_id &&
-            parseInt(pr.clasificado_id) === parseInt(p.clasificado_id) ? 2 : 0;
+            parseInt(pr.clasificado_id) === parseInt(p.clasificado_id) ? 1 : 0;
           return { ...pr, base_pts: base, bonus_pts: bonus };
         });
 

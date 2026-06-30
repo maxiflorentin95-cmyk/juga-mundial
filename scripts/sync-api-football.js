@@ -169,11 +169,11 @@ const STAGE_MAP = {
   'FINAL':         'final',
 };
 
-function calcularPuntos(pL, pV, rL, rV, esEliminatoria = false) {
-  if (pL === rL && pV === rV)                                   return 5;
-  if (esEliminatoria && pL === pV && rL === rV)                 return 2;  // empate acertado
-  if ((pL - pV) === (rL - rV))                                  return 3;
-  if (Math.sign(pL - pV) === Math.sign(rL - rV))               return 2;
+function calcularPuntos(pL, pV, rL, rV) {
+  pL = parseInt(pL); pV = parseInt(pV); rL = parseInt(rL); rV = parseInt(rV);
+  if (pL === rL && pV === rV)                       return 5;
+  if ((pL - pV) === (rL - rV))                     return 3;
+  if (Math.sign(pL - pV) === Math.sign(rL - rV))   return 2;
   return 0;
 }
 
@@ -325,8 +325,8 @@ async function sync() {
 
           const esEliminatoria = dbP.fase && dbP.fase !== 'grupos';
           for (const pr of prons) {
-            const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv, esEliminatoria);
-            const bonus = (pr.clasificado_id && realClasifId && parseInt(pr.clasificado_id) === parseInt(realClasifId)) ? 2 : 0;
+            const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
+            const bonus = esEliminatoria && pr.clasificado_id && realClasifId && parseInt(pr.clasificado_id) === parseInt(realClasifId) ? 1 : 0;
             const pts   = base + bonus;
             await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
             await client.query('UPDATE usuarios SET puntos_total = puntos_total + $1 WHERE id=$2', [pts, pr.usuario_id]);
