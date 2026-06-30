@@ -71,6 +71,7 @@
             <th class="text-center" title="Exactos (5 pts)">🎯</th>
             <th class="text-center" title="Diferencia (3 pts)">≈</th>
             <th class="text-center" title="Resultado (2 pts)">✓</th>
+            <th class="text-center" title="Bonus clasificado eliminatoria">🏅</th>
             <th class="text-center" title="Mejor racha histórica">⚡ Racha</th>
             <th class="text-center fw-bold">Pts</th>
           </tr>
@@ -106,6 +107,11 @@
             <td class="text-center"><span class="badge bg-warning text-dark"><%= u.exactos %></span></td>
             <td class="text-center"><span class="badge bg-success"><%= u.diferencia %></span></td>
             <td class="text-center"><span class="badge bg-primary"><%= u.resultado %></span></td>
+            <td class="text-center">
+              <% if (parseInt(u.bonus_clasificado) > 0) { %>
+                <span class="badge bg-info text-dark">+<%= u.bonus_clasificado %></span>
+              <% } else { %><span class="text-muted small">—</span><% } %>
+            </td>
             <td class="text-center">
               <% if (u.racha_max > 0) { %>
                 <span class="fw-bold" style="color:#6f42c1">⚡<%= u.racha_max %></span>
@@ -166,6 +172,9 @@
               <span class="badge bg-primary">✓ <%= u.resultado %></span>
               <% if (u.racha_max > 0) { %>
                 <span class="badge" style="background:#6f42c1">⚡<%= u.racha_max %><%= u.racha_actual===u.racha_max && u.racha_actual>0 ? ' 🔥' : '' %></span>
+              <% } %>
+              <% if (parseInt(u.bonus_clasificado) > 0) { %>
+                <span class="badge bg-info text-dark">🏅 +<%= u.bonus_clasificado %></span>
               <% } %>
             </div>
           </div>

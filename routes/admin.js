@@ -27,9 +27,12 @@ function calcularPuntos(pL, pV, rL, rV, esEliminatoria = false) {
   return 0;
 }
 
-function calcularBonus(predClasifId, realClasifId) {
+function calcularBonus(predClasifId, realClasifId, predGL, predGV) {
   if (!predClasifId || !realClasifId) return 0;
-  return parseInt(predClasifId) === parseInt(realClasifId) ? 2 : 0;
+  if (parseInt(predClasifId) !== parseInt(realClasifId)) return 0;
+  // Bonus solo si pronosticó empate y acertó quién clasifica
+  const esEmpate = parseInt(predGL) === parseInt(predGV);
+  return esEmpate ? 1 : 0;
 }
 
 router.get('/', requireAdmin, async (req, res) => {
@@ -894,6 +897,87 @@ router.post('/reseed', requireAdmin, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.json({ ok: false, msg: e.message });
+  }
+});
+
+// POST /admin/recalcular-clasificado
+// Rellena clasificado_id faltante en pronósticos y aplica/revierte bonus +2
+router.post('/recalcular-clasificado', requireAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { partido_id, empate_clasif_id } = req.body;
+
+    const partido = await prepare(`
+      SELECT p.*, p.clasificado_id AS real_clasif_id
+      FROM partidos p WHERE p.id = $1
+    `).get(partido_id);
+
+    if (!partido) return res.json({ ok: false, msg: 'Partido no encontrado' });
+    if (partido.estado !== 'finalizado') return res.json({ ok: false, msg: 'El partido no está finalizado' });
+    if (!partido.real_clasif_id) return res.json({ ok: false, msg: 'El partido no tiene clasificado cargado. Guardá el resultado primero desde el panel.' });
+
+    const gl = parseInt(partido.goles_local);
+    const gv = parseInt(partido.goles_visitante);
+    const realClasifId = parseInt(partido.real_clasif_id);
+
+    const prons = await prepare('SELECT * FROM pronosticos WHERE partido_id=$1').all(partido_id);
+
+    await client.query('BEGIN');
+
+    let actualizados = 0;
+    let sinClasif = 0;
+
+    for (const pr of prons) {
+      // Revertir puntos anteriores
+      await client.query(
+        'UPDATE usuarios SET puntos_total = GREATEST(0, puntos_total - $1) WHERE id=$2',
+        [pr.puntos_obtenidos, pr.usuario_id]
+      );
+
+      // Derivar clasificado_id si es NULL
+      let predClasifId = pr.clasificado_id ? parseInt(pr.clasificado_id) : null;
+
+      if (!predClasifId) {
+        const pL = parseInt(pr.goles_local);
+        const pV = parseInt(pr.goles_visitante);
+        if (pL > pV) {
+          predClasifId = parseInt(partido.equipo_local_id);
+        } else if (pV > pL) {
+          predClasifId = parseInt(partido.equipo_visitante_id);
+        } else {
+          // Empate: usar el override manual si se proporcionó
+          predClasifId = empate_clasif_id ? parseInt(empate_clasif_id) : null;
+          if (!predClasifId) { sinClasif++; }
+        }
+      }
+
+      // Guardar clasificado_id derivado en pronosticos
+      await client.query(
+        'UPDATE pronosticos SET clasificado_id=$1 WHERE id=$2',
+        [predClasifId, pr.id]
+      );
+
+      // Recalcular puntos con bonus
+      const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
+      const bonus = calcularBonus(predClasifId, realClasifId, pr.goles_local, pr.goles_visitante);
+      const pts   = base + bonus;
+
+      await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
+      await client.query('UPDATE usuarios SET puntos_total = puntos_total + $1 WHERE id=$2', [pts, pr.usuario_id]);
+      actualizados++;
+    }
+
+    await client.query('COMMIT');
+
+    let msg = `${actualizados} pronósticos recalculados con bonus clasificado.`;
+    if (sinClasif > 0) msg += ` ${sinClasif} empate(s) sin clasificado asignado (necesitan override manual).`;
+    res.json({ ok: true, msg });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error(e);
+    res.json({ ok: false, msg: e.message });
+  } finally {
+    client.release();
   }
 });
 

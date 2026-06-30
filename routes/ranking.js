@@ -11,9 +11,16 @@ router.get('/', requireLogin, async (req, res) => {
         COUNT(CASE WHEN pr.puntos_obtenidos=5 THEN 1 END) AS exactos,
         COUNT(CASE WHEN pr.puntos_obtenidos=3 THEN 1 END) AS diferencia,
         COUNT(CASE WHEN pr.puntos_obtenidos=2 THEN 1 END) AS resultado,
-        COUNT(pr.id) AS total_pron
+        COUNT(pr.id) AS total_pron,
+        COALESCE(SUM(
+          CASE WHEN p.fase != 'grupos' AND p.clasificado_id IS NOT NULL
+                AND pr.clasificado_id IS NOT NULL
+                AND pr.clasificado_id = p.clasificado_id
+               THEN 2 ELSE 0 END
+        ), 0) AS bonus_clasificado
       FROM usuarios u
       LEFT JOIN pronosticos pr ON pr.usuario_id = u.id
+      LEFT JOIN partidos p ON pr.partido_id = p.id
       GROUP BY u.id, u.username
       ORDER BY puntos_total DESC, exactos DESC, diferencia DESC
     `).all();

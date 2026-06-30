@@ -123,7 +123,10 @@
                data-local-id="<%= p.equipo_local_id %>"
                data-visit-id="<%= p.equipo_visitante_id %>"
                data-local-nombre="<%= p.local_corto || p.local_nombre %>"
-               data-visit-nombre="<%= p.visit_corto || p.visit_nombre %>">
+               data-visit-nombre="<%= p.visit_corto || p.visit_nombre %>"
+               data-local-bandera="<%= p.local_bandera %>"
+               data-visit-bandera="<%= p.visit_bandera %>"
+               data-clasif-id="<%= p.pronostico && p.pronostico.clasificado_id ? p.pronostico.clasificado_id : '' %>">
             <% if (p.pronostico) { %>
             <span class="badge bg-success-subtle text-success border border-success-subtle small px-2 badge-cargado">
               <i class="bi bi-check2 me-1"></i>Cargado
@@ -146,6 +149,10 @@
                 <option value="<%= p.equipo_local_id %>"><%= p.local_bandera %> <%= p.local_corto || p.local_nombre %></option>
                 <option value="<%= p.equipo_visitante_id %>"><%= p.visit_bandera %> <%= p.visit_corto || p.visit_nombre %></option>
               </select>
+            </div>
+            <!-- Indicador automático (solo visible si hay ganador claro) -->
+            <div class="clasif-static badge bg-info text-dark" style="display:none">
+              <i class="bi bi-arrow-right-circle me-1"></i>Clasifica: <span class="clasif-static-nombre"></span>
             </div>
             <button class="btn btn-sm <%= p.pronostico ? 'btn-outline-primary' : 'btn-primary' %> btn-guardar"
               data-id="<%= p.id %>"
@@ -175,30 +182,54 @@
 <% }) %>
 
 <script>
-// Mostrar/ocultar selector de clasificado según si el pronóstico es empate
-function actualizarClasif(row) {
+function actualizarClasif(row, esInit) {
   const gl = row.querySelector('.pron-local').value;
   const gv = row.querySelector('.pron-visit').value;
-  const wrap = row.querySelector('.clasif-wrap');
+  const wrap        = row.querySelector('.clasif-wrap');
+  const staticDiv   = row.querySelector('.clasif-static');
+  const staticNombre = row.querySelector('.clasif-static-nombre');
+  const sel         = row.querySelector('.sel-clasif');
   if (!wrap) return;
-  const esEmpate = gl !== '' && gv !== '' && parseInt(gl) === parseInt(gv);
-  wrap.style.display = esEmpate ? '' : 'none';
-  // Si no es empate, auto-seleccionar ganador en el select oculto
-  const sel = wrap.querySelector('.sel-clasif');
-  const btnLocalId = row.querySelector('.btn-guardar').dataset.localId;
-  const btnVisitId = row.querySelector('.btn-guardar').dataset.visitId;
-  if (!esEmpate) {
-    if (gl !== '' && gv !== '') {
-      sel.value = parseInt(gl) > parseInt(gv) ? btnLocalId : btnVisitId;
+
+  const localId   = row.dataset.localId;
+  const visitId   = row.dataset.visitId;
+  const localNom  = row.dataset.localNombre;
+  const visitNom  = row.dataset.visitNombre;
+  const localBan  = row.dataset.localBandera;
+  const visitBan  = row.dataset.visitBandera;
+  const savedClasif = row.dataset.clasifId;
+
+  const ambosRellenos = gl !== '' && gv !== '';
+  const esEmpate = ambosRellenos && parseInt(gl) === parseInt(gv);
+
+  if (esEmpate) {
+    // Mostrar selector, ocultar estático
+    wrap.style.display = '';
+    if (staticDiv) staticDiv.style.display = 'none';
+    // Si es init y hay clasificado guardado, pre-seleccionar
+    if (esInit && savedClasif) sel.value = savedClasif;
+  } else {
+    // Ocultar selector, mostrar badge estático con el ganador
+    wrap.style.display = 'none';
+    if (ambosRellenos) {
+      const ganadorId  = parseInt(gl) > parseInt(gv) ? localId  : visitId;
+      const ganadorNom = parseInt(gl) > parseInt(gv) ? localNom : visitNom;
+      const ganadorBan = parseInt(gl) > parseInt(gv) ? localBan : visitBan;
+      sel.value = ganadorId;
+      if (staticDiv) {
+        staticDiv.style.display = '';
+        staticNombre.textContent = `${ganadorBan} ${ganadorNom}`;
+      }
+    } else {
+      if (staticDiv) staticDiv.style.display = 'none';
     }
   }
 }
 
 document.querySelectorAll('.input-pron').forEach(row => {
-  // Init estado inicial si ya hay valores cargados
-  actualizarClasif(row);
-  row.querySelector('.pron-local')?.addEventListener('input', () => actualizarClasif(row));
-  row.querySelector('.pron-visit')?.addEventListener('input', () => actualizarClasif(row));
+  actualizarClasif(row, true); // init con pre-selección
+  row.querySelector('.pron-local')?.addEventListener('input',  () => actualizarClasif(row, false));
+  row.querySelector('.pron-visit')?.addEventListener('input',  () => actualizarClasif(row, false));
 });
 
 document.querySelectorAll('.btn-guardar').forEach(btn => {

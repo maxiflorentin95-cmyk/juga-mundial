@@ -122,16 +122,29 @@
         <% if (p.estado === 'finalizado') { %>
           <!-- Finalizado: mostrar pronóstico y puntos -->
           <% if (p.pronostico) { %>
+          <%
+            const esElim = p.fase && p.fase !== 'grupos';
+            const bonus  = esElim && p.clasificado_id && p.pronostico.clasificado_id &&
+                           parseInt(p.pronostico.clasificado_id) === parseInt(p.clasificado_id) ? 2 : 0;
+            const base   = p.pronostico.puntos_obtenidos - bonus;
+          %>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="text-muted small">Tu pronóstico:</span>
             <span class="badge bg-dark px-2 py-1"><%= p.pronostico.goles_local %>–<%= p.pronostico.goles_visitante %></span>
             <span class="badge px-2 py-1
-              <%= p.pronostico.puntos_obtenidos===5 ? 'bg-warning text-dark' :
-                  p.pronostico.puntos_obtenidos===3 ? 'bg-success' :
-                  p.pronostico.puntos_obtenidos===2 ? 'bg-primary' : 'bg-secondary' %>">
-              <%= p.pronostico.puntos_obtenidos===5 ? '🎯' : p.pronostico.puntos_obtenidos===3 ? '≈' : p.pronostico.puntos_obtenidos===2 ? '✓' : '✗' %>
-              +<%= p.pronostico.puntos_obtenidos %> pts
+              <%= base===5 ? 'bg-warning text-dark' : base===3 ? 'bg-success' : base===2 ? 'bg-primary' : 'bg-secondary' %>">
+              <%= base===5 ? '🎯' : base===3 ? '≈' : base===2 ? '✓' : '✗' %>
+              +<%= base %> pts
             </span>
+            <% if (bonus > 0) { %>
+              <span class="badge bg-info text-dark px-2 py-1">🏅 +<%= bonus %> pts</span>
+            <% } %>
+            <% if (esElim && p.pronostico.clasificado_id) { %>
+              <span class="text-muted small">
+                · Clasif: <%= parseInt(p.pronostico.clasificado_id) === parseInt(p.equipo_local_id) ? p.local_bandera + ' ' + p.local_corto : p.visit_bandera + ' ' + p.visit_corto %>
+                <% if (p.clasificado_id) { %><%= parseInt(p.pronostico.clasificado_id) === parseInt(p.clasificado_id) ? '✅' : '❌' %><% } %>
+              </span>
+            <% } %>
           </div>
           <% } else { %>
           <span class="text-muted small fst-italic">No pronosticaste este partido</span>
@@ -140,9 +153,14 @@
         <% } else if (p.cerrado) { %>
           <!-- Cerrado, en juego -->
           <% if (p.pronostico) { %>
-          <div class="d-flex align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="text-muted small">Tu pronóstico:</span>
             <span class="badge bg-dark px-2 py-1"><%= p.pronostico.goles_local %>–<%= p.pronostico.goles_visitante %></span>
+            <% if (p.fase && p.fase !== 'grupos' && p.pronostico.clasificado_id) { %>
+              <span class="badge bg-info text-dark px-2 py-1">
+                🏅 <%= parseInt(p.pronostico.clasificado_id) === parseInt(p.equipo_local_id) ? p.local_bandera + ' ' + p.local_corto : p.visit_bandera + ' ' + p.visit_corto %>
+              </span>
+            <% } %>
             <span class="text-muted small"><i class="bi bi-lock-fill"></i> cerrado</span>
           </div>
           <% } else { %>
@@ -151,7 +169,14 @@
 
         <% } else { %>
           <!-- Abierto: formulario editable -->
-          <div class="d-flex align-items-center gap-2 flex-wrap input-pron">
+          <div class="d-flex align-items-center gap-2 flex-wrap input-pron"
+               data-local-id="<%= p.equipo_local_id %>"
+               data-visit-id="<%= p.equipo_visitante_id %>"
+               data-local-nombre="<%= p.local_corto %>"
+               data-visit-nombre="<%= p.visit_corto %>"
+               data-local-bandera="<%= p.local_bandera %>"
+               data-visit-bandera="<%= p.visit_bandera %>"
+               data-clasif-id="<%= p.pronostico && p.pronostico.clasificado_id ? p.pronostico.clasificado_id : '' %>">
             <% if (p.pronostico) { %>
             <span class="badge bg-success-subtle text-success border border-success-subtle small px-2 badge-cargado">
               <i class="bi bi-check2 me-1"></i>Cargado
@@ -171,12 +196,17 @@
               <span class="text-muted small text-nowrap">:<%= p.visit_corto %></span>
             </div>
             <% if (p.fase && p.fase !== 'grupos') { %>
+            <!-- Selector (solo si empate) -->
             <div class="clasif-wrap" style="display:none">
               <select class="form-select form-select-sm sel-clasif" style="min-width:130px">
                 <option value="">¿Quién clasifica?</option>
                 <option value="<%= p.equipo_local_id %>"><%= p.local_bandera %> <%= p.local_corto %></option>
                 <option value="<%= p.equipo_visitante_id %>"><%= p.visit_bandera %> <%= p.visit_corto %></option>
               </select>
+            </div>
+            <!-- Badge auto (si hay ganador claro) -->
+            <div class="clasif-static badge bg-info text-dark" style="display:none">
+              🏅 Clasifica: <span class="clasif-static-nombre"></span>
             </div>
             <% } %>
             <button class="btn btn-sm btn-guardar <%= p.pronostico ? 'btn-outline-primary' : 'btn-primary' %>"
@@ -198,20 +228,51 @@
 <% }) %>
 
 <script>
-// Mostrar/ocultar selector de clasificado en eliminatoria
-function actualizarClasif(row) {
-  const wrap = row.querySelector('.clasif-wrap');
+function actualizarClasif(row, esInit) {
+  const inputPron = row.querySelector('.input-pron');
+  const wrap      = inputPron?.querySelector('.clasif-wrap');
   if (!wrap) return;
+
   const gl = row.querySelector('.pron-local').value;
   const gv = row.querySelector('.pron-visit').value;
-  const esEmpate = gl !== '' && gv !== '' && parseInt(gl) === parseInt(gv);
-  wrap.style.display = esEmpate ? '' : 'none';
+  const sel         = wrap.querySelector('.sel-clasif');
+  const staticDiv   = inputPron.querySelector('.clasif-static');
+  const staticNom   = inputPron.querySelector('.clasif-static-nombre');
+
+  const localId   = inputPron.dataset.localId;
+  const visitId   = inputPron.dataset.visitId;
+  const localNom  = inputPron.dataset.localNombre;
+  const visitNom  = inputPron.dataset.visitNombre;
+  const localBan  = inputPron.dataset.localBandera;
+  const visitBan  = inputPron.dataset.visitBandera;
+  const savedClasif = inputPron.dataset.clasifId;
+
+  const ambos   = gl !== '' && gv !== '';
+  const esEmpate = ambos && parseInt(gl) === parseInt(gv);
+
+  if (esEmpate) {
+    wrap.style.display = '';
+    if (staticDiv) staticDiv.style.display = 'none';
+    if (esInit && savedClasif) sel.value = savedClasif;
+  } else {
+    wrap.style.display = 'none';
+    if (ambos) {
+      const esLocal = parseInt(gl) > parseInt(gv);
+      sel.value = esLocal ? localId : visitId;
+      if (staticDiv) {
+        staticDiv.style.display = '';
+        staticNom.textContent = `${esLocal ? localBan : visitBan} ${esLocal ? localNom : visitNom}`;
+      }
+    } else {
+      if (staticDiv) staticDiv.style.display = 'none';
+    }
+  }
 }
 
 document.querySelectorAll('.partido-card').forEach(row => {
-  actualizarClasif(row);
-  row.querySelector('.pron-local')?.addEventListener('input', () => actualizarClasif(row));
-  row.querySelector('.pron-visit')?.addEventListener('input', () => actualizarClasif(row));
+  actualizarClasif(row, true);
+  row.querySelector('.pron-local')?.addEventListener('input', () => actualizarClasif(row, false));
+  row.querySelector('.pron-visit')?.addEventListener('input', () => actualizarClasif(row, false));
 });
 
 document.querySelectorAll('.btn-guardar').forEach(btn => {
