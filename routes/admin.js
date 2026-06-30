@@ -19,11 +19,11 @@ const USUARIOS_IMPORTAR = [
   { username: 'JoeAlca',     nombre: 'Joel Alcaraz',        email: 'joelalcaraz6@gmail.com',                 admin: 0 },
 ];
 
-function calcularPuntos(pL, pV, rL, rV) {
-  if (pL === rL && pV === rV) return 5;                          // exacto
-  if ((pL - pV) === (rL - rV)) return 3;                        // diferencia correcta
-  if (Math.sign(pL - pV) === Math.sign(rL - rV)) return 2;     // ganador correcto
-  if (pL === pV && rL === rV) return 2;                         // empate acertado (eliminatoria)
+function calcularPuntos(pL, pV, rL, rV, esEliminatoria = false) {
+  if (pL === rL && pV === rV) return 5;                                         // exacto
+  if (esEliminatoria && pL === pV && rL === rV) return 2;                       // empate acertado (eliminatoria)
+  if ((pL - pV) === (rL - rV)) return 3;                                        // diferencia correcta
+  if (Math.sign(pL - pV) === Math.sign(rL - rV)) return 2;                     // ganador correcto
   return 0;
 }
 
@@ -102,8 +102,9 @@ router.post('/resultado', requireAdmin, async (req, res) => {
 
     // Calcular y asignar puntos (base + bonus clasificado)
     const prons = await client.query('SELECT * FROM pronosticos WHERE partido_id=$1', [partido_id]);
+    const esEliminatoria = partido.fase && partido.fase !== 'grupos';
     for (const pr of prons.rows) {
-      const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
+      const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv, esEliminatoria);
       const bonus = calcularBonus(pr.clasificado_id, realClasifId);
       const pts   = base + bonus;
       await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
@@ -255,6 +256,49 @@ router.post('/recalcular-puntos', requireAdmin, async (req, res) => {
     res.json({ ok: true, msg: `Puntos recalculados para ${usuarios.length} usuarios`, ranking: usuarios });
   } catch (e) {
     res.json({ ok: false, msg: e.message });
+  }
+});
+
+router.post('/recalcular-eliminatoria', requireAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const partidos = await prepare(`
+      SELECT p.id, p.fase, p.goles_local, p.goles_visitante, p.clasificado_id
+      FROM partidos p
+      WHERE p.estado = 'finalizado' AND p.fase IS DISTINCT FROM 'grupos' AND p.fase IS NOT NULL
+    `).all();
+
+    await client.query('BEGIN');
+
+    let actualizados = 0;
+    for (const partido of partidos) {
+      const { rows: prons } = await client.query('SELECT * FROM pronosticos WHERE partido_id=$1', [partido.id]);
+      for (const pr of prons) {
+        const esEliminatoria = true;
+        const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, partido.goles_local, partido.goles_visitante, esEliminatoria);
+        const bonus = calcularBonus(pr.clasificado_id, partido.clasificado_id);
+        const pts   = base + bonus;
+        await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
+        actualizados++;
+      }
+    }
+
+    // Recalcular puntos_total de todos los usuarios desde pronosticos
+    await client.query(`
+      UPDATE usuarios SET puntos_total = (
+        SELECT COALESCE(SUM(puntos_obtenidos), 0)
+        FROM pronosticos WHERE usuario_id = usuarios.id
+      )
+    `);
+
+    await client.query('COMMIT');
+    res.json({ ok: true, msg: `✓ ${partidos.length} partidos de eliminatoria recalculados, ${actualizados} pronósticos actualizados.` });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error(e);
+    res.json({ ok: false, msg: e.message });
+  } finally {
+    client.release();
   }
 });
 

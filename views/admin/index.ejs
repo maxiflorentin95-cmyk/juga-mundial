@@ -80,6 +80,26 @@
     </div>
   </div>
 
+  <!-- Recalcular puntos eliminatoria -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-danger text-white fw-bold">
+        <i class="bi bi-arrow-repeat me-2"></i>Recalcular Eliminatoria
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Recalcula los puntos de <strong>todos los partidos de eliminatoria</strong> finalizados con las reglas correctas
+          (empate acertado = 2 pts, bonus clasificado). Luego actualiza el ranking.
+          Usá esto si los puntos de 16avos/octavos/etc. están mal.
+        </p>
+        <button id="btnRecalcularElim" class="btn btn-danger">
+          <i class="bi bi-calculator me-2"></i>Recalcular eliminatoria
+        </button>
+        <div id="recalcularElimMsg" class="mt-3 small"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Corrección de horarios -->
   <div class="col-12 col-md-6">
     <div class="card border-0 shadow-sm">
@@ -389,6 +409,23 @@ document.getElementById('btnRecalcular').addEventListener('click', async functio
   }
   this.disabled = false;
   this.innerHTML = '<i class="bi bi-calculator me-2"></i>Recalcular ahora';
+});
+
+document.getElementById('btnRecalcularElim').addEventListener('click', async function() {
+  if (!confirm('¿Recalcular puntos de TODOS los partidos de eliminatoria finalizados? Esto sobrescribirá los puntos actuales.')) return;
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Recalculando...';
+  const msg = document.getElementById('recalcularElimMsg');
+  try {
+    const r = await fetch('/admin/recalcular-eliminatoria', { method: 'POST' }).then(x => x.json());
+    msg.innerHTML = r.ok
+      ? `<div class="alert alert-success py-2">${r.msg}</div>`
+      : `<div class="alert alert-danger py-2">${r.msg}</div>`;
+  } catch(e) {
+    msg.innerHTML = `<div class="alert alert-danger py-2">Error de red</div>`;
+  }
+  this.disabled = false;
+  this.innerHTML = '<i class="bi bi-calculator me-2"></i>Recalcular eliminatoria';
 });
 
 document.getElementById('btnHorarios').addEventListener('click', async function() {
