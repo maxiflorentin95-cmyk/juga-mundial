@@ -15,10 +15,25 @@
         <label class="form-label small fw-semibold text-muted mb-1">Seleccionar partido</label>
         <select name="partido" class="form-select" onchange="this.form.submit()">
           <option value="">— Elegí un partido —</option>
-          <% const grupos = [...new Set(partidos.map(p => p.grupo))].sort(); %>
+          <%
+            const FASE_LABEL_H = {dieciseisavos:'16avos de Final',octavos:'Octavos de Final',cuartos:'Cuartos de Final',semifinal:'Semifinales',tercer_puesto:'Tercer Puesto',final:'Gran Final'};
+            const grupos = [...new Set(partidos.filter(p=>p.grupo).map(p => p.grupo))].sort();
+            const fases  = ['dieciseisavos','octavos','cuartos','semifinal','tercer_puesto','final'].filter(f => partidos.some(p=>p.fase===f));
+          %>
           <% grupos.forEach(g => { %>
           <optgroup label="Grupo <%= g %>">
             <% partidos.filter(p => p.grupo === g).forEach(p => { %>
+            <option value="<%= p.id %>" <%= selId === p.id ? 'selected' : '' %>>
+              <%= new Date(p.fecha + 'T12:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short'}) %>
+              · <%= p.local_nombre %> vs <%= p.visit_nombre %>
+              <%= p.estado === 'finalizado' ? '✓' : p.cerrado ? '⏸' : '' %>
+            </option>
+            <% }) %>
+          </optgroup>
+          <% }) %>
+          <% fases.forEach(f => { %>
+          <optgroup label="<%= FASE_LABEL_H[f] || f %>">
+            <% partidos.filter(p => p.fase === f).forEach(p => { %>
             <option value="<%= p.id %>" <%= selId === p.id ? 'selected' : '' %>>
               <%= new Date(p.fecha + 'T12:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short'}) %>
               · <%= p.local_nombre %> vs <%= p.visit_nombre %>
@@ -46,7 +61,11 @@
   <div class="card-header py-2 <%= detalle.estado === 'finalizado' ? 'bg-success' : detalle.cerrado ? 'bg-secondary' : 'bg-primary' %> text-white">
     <div class="d-flex justify-content-between align-items-center">
       <span class="small">
+        <% if (detalle.grupo) { %>
         <span class="badge bg-white bg-opacity-25 me-1">Grupo <%= detalle.grupo %></span>
+        <% } else if (detalle.fase) { %>
+        <span class="badge bg-white bg-opacity-25 me-1"><%= FASE_LABEL_H[detalle.fase] || detalle.fase %></span>
+        <% } %>
         <%= new Date(detalle.fecha + 'T12:00:00Z').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}) %>
         · <%= detalle.hora %> PY
       </span>
@@ -118,8 +137,13 @@
 <!-- Resumen de puntos -->
 <div class="d-flex gap-2 flex-wrap mb-3">
   <span class="badge bg-warning text-dark fs-6 px-3 py-2">🎯 <%= detalle.exactos %> exactos (5pts)</span>
+  <% if (!detalle.esElim) { %>
   <span class="badge bg-success fs-6 px-3 py-2">≈ <%= detalle.diferencia %> diferencia (3pts)</span>
+  <% } %>
   <span class="badge bg-primary fs-6 px-3 py-2">✓ <%= detalle.ganador %> ganador (2pts)</span>
+  <% if (detalle.esElim) { %>
+  <span class="badge bg-info text-dark fs-6 px-3 py-2">🤜 <%= detalle.prons.filter(x=>x.base_pts===2&&x.bonus_pts===0).length + detalle.prons.filter(x=>x.base_pts===0&&x.bonus_pts===2).length %> empate (2pts)</span>
+  <% } %>
   <span class="badge bg-secondary fs-6 px-3 py-2">✗ <%= detalle.fallados %> fallaron (0pts)</span>
 </div>
 
@@ -140,23 +164,30 @@
       </thead>
       <tbody>
         <% detalle.prons.forEach((pr, i) => { %>
-        <tr class="<%= pr.puntos_obtenidos === 5 ? 'table-warning' : '' %>">
+        <tr class="<%= pr.base_pts === 5 ? 'table-warning' : '' %>">
           <td class="ps-3 text-muted small"><%= i + 1 %></td>
           <td class="fw-semibold"><%= pr.username %></td>
           <td class="text-center">
             <span class="badge bg-dark fs-6 px-3"><%= pr.goles_local %> – <%= pr.goles_visitante %></span>
           </td>
           <td class="text-center">
-            <% if (pr.puntos_obtenidos === 5) { %>
-              <span class="badge bg-warning text-dark px-3 py-2">🎯 5</span>
-            <% } else if (pr.puntos_obtenidos === 3) { %>
-              <span class="badge bg-success px-3 py-2">≈ 3</span>
-            <% } else if (pr.puntos_obtenidos === 2) { %>
-              <span class="badge bg-primary px-3 py-2">✓ 2</span>
-            <% } else if (pr.puntos_obtenidos === 0) { %>
-              <span class="badge bg-secondary px-3 py-2">✗ 0</span>
+            <% if (detalle.estado === 'finalizado' && pr.base_pts !== null) { %>
+              <div class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-center">
+                <% if (pr.base_pts === 5) { %>
+                  <span class="badge bg-warning text-dark px-2 py-1">🎯 5</span>
+                <% } else if (pr.base_pts === 3) { %>
+                  <span class="badge bg-success px-2 py-1">≈ 3</span>
+                <% } else if (pr.base_pts === 2) { %>
+                  <span class="badge bg-primary px-2 py-1">✓ 2</span>
+                <% } else { %>
+                  <span class="badge bg-secondary px-2 py-1">✗ 0</span>
+                <% } %>
+                <% if (pr.bonus_pts > 0) { %>
+                  <span class="badge bg-info text-dark px-2 py-1">🤜 +<%= pr.bonus_pts %></span>
+                <% } %>
+              </div>
             <% } else { %>
-              <span class="badge bg-light text-dark px-3 py-2">–</span>
+              <span class="badge bg-light text-dark px-2 py-1">–</span>
             <% } %>
           </td>
         </tr>
