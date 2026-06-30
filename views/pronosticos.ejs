@@ -124,9 +124,14 @@
           <% if (p.pronostico) { %>
           <%
             const esElim = p.fase && p.fase !== 'grupos';
-            const bonus  = esElim && p.clasificado_id && p.pronostico.clasificado_id &&
-                           parseInt(p.pronostico.clasificado_id) === parseInt(p.clasificado_id) ? 2 : 0;
-            const base   = p.pronostico.puntos_obtenidos - bonus;
+            const pL2 = parseInt(p.pronostico.goles_local), pV2 = parseInt(p.pronostico.goles_visitante);
+            const rL2 = parseInt(p.goles_local), rV2 = parseInt(p.goles_visitante);
+            let base = 0;
+            if (pL2===rL2 && pV2===rV2) base=5;
+            else if ((pL2-pV2)===(rL2-rV2)) base=3;
+            else if (Math.sign(pL2-pV2)===Math.sign(rL2-rV2)) base=2;
+            const bonus = esElim && p.clasificado_id && p.pronostico.clasificado_id &&
+                          parseInt(p.pronostico.clasificado_id) === parseInt(p.clasificado_id) ? 1 : 0;
           %>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="text-muted small">Tu pronóstico:</span>
@@ -137,7 +142,7 @@
               +<%= base %> pts
             </span>
             <% if (bonus > 0) { %>
-              <span class="badge bg-info text-dark px-2 py-1">🏅 +<%= bonus %> pts</span>
+              <span class="badge bg-info text-dark px-2 py-1">👊 +1</span>
             <% } %>
             <% if (esElim && p.pronostico.clasificado_id) { %>
               <span class="text-muted small">

@@ -125,13 +125,27 @@
           </td>
           <td class="text-center">
             <% if (p.estado === 'finalizado') { %>
-            <span class="badge px-2
-              <%= p.puntos_obtenidos===5 ? 'bg-warning text-dark' :
-                  p.puntos_obtenidos===3 ? 'bg-success' :
-                  p.puntos_obtenidos===2 ? 'bg-primary' : 'bg-secondary' %>">
-              <%= p.puntos_obtenidos===5 ? '🎯' : p.puntos_obtenidos===3 ? '≈' : p.puntos_obtenidos===2 ? '✓' : '✗' %>
-              <%= p.puntos_obtenidos %>
-            </span>
+            <%
+              const pL = parseInt(p.p_local), pV = parseInt(p.p_visit);
+              const rL = parseInt(p.r_local),  rV = parseInt(p.r_visit);
+              let basePts = 0;
+              if (pL===rL && pV===rV) basePts=5;
+              else if ((pL-pV)===(rL-rV)) basePts=3;
+              else if (Math.sign(pL-pV)===Math.sign(rL-rV)) basePts=2;
+              const esElimP = p.fase && p.fase !== 'grupos';
+              const bonusPts = esElimP && p.pron_clasif_id && p.real_clasif_id &&
+                parseInt(p.pron_clasif_id)===parseInt(p.real_clasif_id) ? 1 : 0;
+            %>
+            <div class="d-inline-flex align-items-center gap-1">
+              <span class="badge px-2
+                <%= basePts===5 ? 'bg-warning text-dark' : basePts===3 ? 'bg-success' : basePts===2 ? 'bg-primary' : 'bg-secondary' %>">
+                <%= basePts===5 ? '🎯' : basePts===3 ? '≈' : basePts===2 ? '✓' : '✗' %>
+                <%= basePts %>
+              </span>
+              <% if (bonusPts > 0) { %>
+              <span class="badge bg-info text-dark px-2">👊 +1</span>
+              <% } %>
+            </div>
             <% } else { %>
             <span class="text-muted small">–</span>
             <% } %>

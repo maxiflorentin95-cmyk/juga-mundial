@@ -28,9 +28,10 @@ router.get('/:username', requireLogin, async (req, res) => {
     // Todos los pronósticos con detalle de partido
     const prons = await prepare(`
       SELECT pr.goles_local AS p_local, pr.goles_visitante AS p_visit,
-             pr.puntos_obtenidos, pr.updated_at,
-             p.id AS partido_id, p.fecha, p.hora, p.grupo, p.estado,
+             pr.puntos_obtenidos, pr.clasificado_id AS pron_clasif_id, pr.updated_at,
+             p.id AS partido_id, p.fecha, p.hora, p.grupo, p.fase, p.estado,
              p.goles_local AS r_local, p.goles_visitante AS r_visit,
+             p.clasificado_id AS real_clasif_id,
              el.nombre AS local_nombre, el.bandera AS local_bandera, el.nombre_corto AS local_corto,
              ev.nombre AS visit_nombre, ev.bandera AS visit_bandera, ev.nombre_corto AS visit_corto
       FROM pronosticos pr
