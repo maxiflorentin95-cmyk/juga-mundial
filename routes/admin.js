@@ -947,7 +947,7 @@ router.post('/reseed', requireAdmin, async (req, res) => {
 });
 
 // POST /admin/recalcular-clasificado
-// Rellena clasificado_id faltante en pronósticos y aplica/revierte bonus +2
+// Rellena clasificado_id faltante en pronósticos y recalcula bonus (+1 si predijo empate y acertó clasificado)
 router.post('/recalcular-clasificado', requireAdmin, async (req, res) => {
   const client = await pool.connect();
   try {
