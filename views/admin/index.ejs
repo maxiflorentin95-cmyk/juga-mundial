@@ -100,6 +100,28 @@
     </div>
   </div>
 
+  <!-- Recalcular partido específico -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-secondary text-white fw-bold">
+        <i class="bi bi-arrow-clockwise me-2"></i>Recalcular Partido Específico
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Recalcula los puntos de <strong>un partido en particular</strong> (por ID).
+          Útil si alguien cargó el pronóstico después de que el partido fue finalizado.
+        </p>
+        <div class="d-flex gap-2">
+          <input type="number" id="inputPartidoId" class="form-control form-control-sm" placeholder="ID del partido" style="max-width:160px">
+          <button id="btnRecalcularPartido" class="btn btn-secondary btn-sm">
+            <i class="bi bi-calculator me-1"></i>Recalcular
+          </button>
+        </div>
+        <div id="recalcularPartidoMsg" class="mt-3 small"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Corrección de horarios -->
   <div class="col-12 col-md-6">
     <div class="card border-0 shadow-sm">
@@ -356,6 +378,12 @@
           <div class="col-5">
             <input type="number" id="inpPronVisit" class="form-control text-center fw-bold" placeholder="Visita" min="0" max="20" value="1">
           </div>
+          <div class="col-12" id="divClasifPron" style="display:none">
+            <label class="form-label small fw-semibold mb-1 text-info">Clasificado (solo eliminatoria)</label>
+            <select id="selClasifPron" class="form-select">
+              <option value="">— Sin clasificado —</option>
+            </select>
+          </div>
         </div>
         <button id="btnCargarPron" class="btn btn-info w-100">
           <i class="bi bi-save me-1"></i>Cargar pronóstico
@@ -426,6 +454,29 @@ document.getElementById('btnRecalcularElim').addEventListener('click', async fun
   }
   this.disabled = false;
   this.innerHTML = '<i class="bi bi-calculator me-2"></i>Recalcular eliminatoria';
+});
+
+document.getElementById('btnRecalcularPartido').addEventListener('click', async function() {
+  const id = document.getElementById('inputPartidoId').value.trim();
+  if (!id) return;
+  if (!confirm(`¿Recalcular puntos del partido #${id}? Esto sobrescribirá los puntos de todos sus pronósticos.`)) return;
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>...';
+  const msg = document.getElementById('recalcularPartidoMsg');
+  try {
+    const r = await fetch('/admin/recalcular-partido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partido_id: parseInt(id) })
+    }).then(x => x.json());
+    msg.innerHTML = r.ok
+      ? `<div class="alert alert-success py-2">${r.msg}</div>`
+      : `<div class="alert alert-danger py-2">${r.msg}</div>`;
+  } catch(e) {
+    msg.innerHTML = `<div class="alert alert-danger py-2">Error de red</div>`;
+  }
+  this.disabled = false;
+  this.innerHTML = '<i class="bi bi-calculator me-1"></i>Recalcular';
 });
 
 document.getElementById('btnHorarios').addEventListener('click', async function() {
@@ -533,12 +584,30 @@ document.getElementById('btnLimpiarPartido').addEventListener('click', async fun
   this.innerHTML = '<i class="bi bi-trash me-1"></i>Limpiar';
 });
 
+// Mostrar/ocultar clasificado según si el partido seleccionado es eliminatoria
+document.getElementById('selPronPartido').addEventListener('change', function() {
+  const pid = parseInt(this.value);
+  const partido = (partidosCache || []).find(p => p.id === pid);
+  const div = document.getElementById('divClasifPron');
+  const sel = document.getElementById('selClasifPron');
+  if (partido && partido.fase && partido.fase !== 'grupos') {
+    sel.innerHTML = `<option value="">— Sin clasificado —</option>
+      <option value="${partido.local_id}">${partido.local_bandera || ''} ${partido.local}</option>
+      <option value="${partido.visit_id}">${partido.visit_bandera || ''} ${partido.visit}</option>`;
+    div.style.display = '';
+  } else {
+    div.style.display = 'none';
+    sel.value = '';
+  }
+});
+
 document.getElementById('btnCargarPron').addEventListener('click', async function() {
-  const username   = document.getElementById('inpPronUsername').value.trim();
-  const partido_id = document.getElementById('selPronPartido').value;
-  const gl         = document.getElementById('inpPronLocal').value;
-  const gv         = document.getElementById('inpPronVisit').value;
-  const msg        = document.getElementById('pronManualMsg');
+  const username     = document.getElementById('inpPronUsername').value.trim();
+  const partido_id   = document.getElementById('selPronPartido').value;
+  const gl           = document.getElementById('inpPronLocal').value;
+  const gv           = document.getElementById('inpPronVisit').value;
+  const clasificado_id = document.getElementById('selClasifPron').value || null;
+  const msg          = document.getElementById('pronManualMsg');
   if (!username || !partido_id || gl==='' || gv==='') {
     msg.innerHTML = '<div class="alert alert-warning py-2">Completá todos los campos</div>';
     return;
@@ -548,7 +617,7 @@ document.getElementById('btnCargarPron').addEventListener('click', async functio
   try {
     const r = await fetch('/admin/cargar-pronostico-manual', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ username, partido_id, goles_local: gl, goles_visitante: gv })
+      body: JSON.stringify({ username, partido_id, goles_local: gl, goles_visitante: gv, clasificado_id })
     }).then(x => x.json());
     msg.innerHTML = r.ok
       ? `<div class="alert alert-success py-2">${r.msg}</div>`

@@ -301,10 +301,50 @@ router.post('/recalcular-eliminatoria', requireAdmin, async (req, res) => {
   }
 });
 
+// POST /admin/recalcular-partido — recalcula puntos de un partido específico
+router.post('/recalcular-partido', requireAdmin, async (req, res) => {
+  const { partido_id } = req.body;
+  if (!partido_id) return res.json({ ok: false, msg: 'Falta partido_id' });
+  const client = await pool.connect();
+  try {
+    const { rows: partidos } = await client.query(
+      'SELECT id, fase, goles_local, goles_visitante, clasificado_id, estado FROM partidos WHERE id=$1',
+      [partido_id]
+    );
+    if (!partidos.length) return res.json({ ok: false, msg: 'Partido no encontrado' });
+    const p = partidos[0];
+    if (p.estado !== 'finalizado') return res.json({ ok: false, msg: 'El partido aún no está finalizado' });
+
+    const esElim = p.fase && p.fase !== 'grupos';
+    const { rows: prons } = await client.query('SELECT * FROM pronosticos WHERE partido_id=$1', [partido_id]);
+    if (!prons.length) return res.json({ ok: false, msg: 'Sin pronósticos para este partido' });
+
+    await client.query('BEGIN');
+    for (const pr of prons) {
+      const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, p.goles_local, p.goles_visitante);
+      const bonus = esElim ? calcularBonus(pr.clasificado_id, p.clasificado_id) : 0;
+      const pts   = base + bonus;
+      await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
+    }
+    await client.query(`
+      UPDATE usuarios SET puntos_total = (
+        SELECT COALESCE(SUM(puntos_obtenidos), 0) FROM pronosticos WHERE usuario_id = usuarios.id
+      )
+    `);
+    await client.query('COMMIT');
+    res.json({ ok: true, msg: `✓ ${prons.length} pronóstico(s) recalculados para partido #${partido_id}` });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.json({ ok: false, msg: e.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Cargar pronóstico manual en nombre de un usuario
 router.post('/cargar-pronostico-manual', requireAdmin, async (req, res) => {
   try {
-    const { username, partido_id, goles_local, goles_visitante } = req.body;
+    const { username, partido_id, goles_local, goles_visitante, clasificado_id } = req.body;
     const user = await prepare('SELECT id FROM usuarios WHERE username=$1').get(username);
     if (!user) return res.json({ ok: false, msg: `Usuario "${username}" no encontrado` });
 
@@ -317,25 +357,31 @@ router.post('/cargar-pronostico-manual', requireAdmin, async (req, res) => {
     if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0)
       return res.json({ ok: false, msg: 'Goles inválidos' });
 
+    const esElim = partido.fase && partido.fase !== 'grupos';
+    const clasifId = (esElim && clasificado_id) ? parseInt(clasificado_id) : null;
+
     // Calcular puntos si el partido ya está finalizado
     let pts = 0;
     if (partido.estado === 'finalizado' && partido.goles_local !== null) {
-      pts = calcularPuntos(gl, gv, partido.goles_local, partido.goles_visitante);
+      const base  = calcularPuntos(gl, gv, partido.goles_local, partido.goles_visitante);
+      const bonus = esElim ? calcularBonus(clasifId, partido.clasificado_id) : 0;
+      pts = base + bonus;
     }
 
     // Verificar si ya tenía pronóstico (para ajustar puntos_total)
     const previo = await prepare('SELECT puntos_obtenidos FROM pronosticos WHERE usuario_id=$1 AND partido_id=$2').get(user.id, partido_id);
 
     await prepare(`
-      INSERT INTO pronosticos (usuario_id, partido_id, goles_local, goles_visitante, puntos_obtenidos, updated_at)
-      VALUES ($1,$2,$3,$4,$5,NOW())
+      INSERT INTO pronosticos (usuario_id, partido_id, goles_local, goles_visitante, clasificado_id, puntos_obtenidos, updated_at)
+      VALUES ($1,$2,$3,$4,$5,$6,NOW())
       ON CONFLICT(usuario_id, partido_id) DO UPDATE SET
         goles_local=EXCLUDED.goles_local, goles_visitante=EXCLUDED.goles_visitante,
+        clasificado_id=EXCLUDED.clasificado_id,
         puntos_obtenidos=EXCLUDED.puntos_obtenidos, updated_at=NOW()
-    `).run(user.id, partido_id, gl, gv, pts);
+    `).run(user.id, partido_id, gl, gv, clasifId, pts);
 
     // Ajustar puntos_total
-    const ptsPrevios = previo ? previo.puntos_obtenidos : 0;
+    const ptsPrevios = previo ? (previo.puntos_obtenidos || 0) : 0;
     const diff = pts - ptsPrevios;
     if (diff !== 0) {
       await prepare('UPDATE usuarios SET puntos_total = GREATEST(0, puntos_total + $1) WHERE id=$2').run(diff, user.id);
@@ -352,14 +398,17 @@ router.post('/cargar-pronostico-manual', requireAdmin, async (req, res) => {
 router.get('/partidos-lista', requireAdmin, async (req, res) => {
   try {
     const rows = await prepare(`
-      SELECT p.id, p.fecha, p.hora, p.grupo,
-             el.nombre AS local, ev.nombre AS visit,
+      SELECT p.id, p.fecha, p.hora, p.grupo, p.fase,
+             p.equipo_local_id AS local_id, p.equipo_visitante_id AS visit_id,
+             el.nombre AS local, el.bandera AS local_bandera,
+             ev.nombre AS visit, ev.bandera AS visit_bandera,
              COUNT(pr.id) AS total
       FROM partidos p
       JOIN equipos el ON p.equipo_local_id = el.id
       JOIN equipos ev ON p.equipo_visitante_id = ev.id
       LEFT JOIN pronosticos pr ON pr.partido_id = p.id
-      GROUP BY p.id, p.fecha, p.hora, p.grupo, el.nombre, ev.nombre
+      GROUP BY p.id, p.fecha, p.hora, p.grupo, p.fase, p.equipo_local_id, p.equipo_visitante_id,
+               el.nombre, el.bandera, ev.nombre, ev.bandera
       ORDER BY p.fecha, p.hora
     `).all();
     res.json(rows);
