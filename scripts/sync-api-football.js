@@ -326,7 +326,8 @@ async function sync() {
           const esEliminatoria = dbP.fase && dbP.fase !== 'grupos';
           for (const pr of prons) {
             const base  = calcularPuntos(pr.goles_local, pr.goles_visitante, gl, gv);
-            const bonus = esEliminatoria && pr.clasificado_id && realClasifId && parseInt(pr.clasificado_id) === parseInt(realClasifId) ? 1 : 0;
+            const predEmpate = parseInt(pr.goles_local) === parseInt(pr.goles_visitante);
+          const bonus = esEliminatoria && predEmpate && pr.clasificado_id && realClasifId && parseInt(pr.clasificado_id) === parseInt(realClasifId) ? 1 : 0;
             const pts   = base + bonus;
             await client.query('UPDATE pronosticos SET puntos_obtenidos=$1 WHERE id=$2', [pts, pr.id]);
             await client.query('UPDATE usuarios SET puntos_total = puntos_total + $1 WHERE id=$2', [pts, pr.usuario_id]);

@@ -72,7 +72,8 @@ router.get('/', requireLogin, async (req, res) => {
         const pronsEnriq = prons.map(pr => {
           if (p.estado !== 'finalizado') return { ...pr, base_pts: null, bonus_pts: null };
           const base = calcBase(pr.goles_local, pr.goles_visitante, p.goles_local, p.goles_visitante);
-          const bonus = esElim && pr.clasificado_id && p.clasificado_id &&
+          const predEmpate = parseInt(pr.goles_local) === parseInt(pr.goles_visitante);
+          const bonus = esElim && predEmpate && pr.clasificado_id && p.clasificado_id &&
             parseInt(pr.clasificado_id) === parseInt(p.clasificado_id) ? 1 : 0;
           return { ...pr, base_pts: base, bonus_pts: bonus };
         });

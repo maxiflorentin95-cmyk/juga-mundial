@@ -130,7 +130,8 @@
             if (pL2===rL2 && pV2===rV2) base=5;
             else if ((pL2-pV2)===(rL2-rV2)) base=3;
             else if (Math.sign(pL2-pV2)===Math.sign(rL2-rV2)) base=2;
-            const bonus = esElim && p.clasificado_id && p.pronostico.clasificado_id &&
+            const predEmpate2 = pL2 === pV2;
+            const bonus = esElim && predEmpate2 && p.clasificado_id && p.pronostico.clasificado_id &&
                           parseInt(p.pronostico.clasificado_id) === parseInt(p.clasificado_id) ? 1 : 0;
           %>
           <div class="d-flex align-items-center gap-2 flex-wrap">

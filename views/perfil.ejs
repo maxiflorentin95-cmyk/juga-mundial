@@ -133,7 +133,8 @@
               else if ((pL-pV)===(rL-rV)) basePts=3;
               else if (Math.sign(pL-pV)===Math.sign(rL-rV)) basePts=2;
               const esElimP = p.fase && p.fase !== 'grupos';
-              const bonusPts = esElimP && p.pron_clasif_id && p.real_clasif_id &&
+              const predEmpateP = pL === pV;
+              const bonusPts = esElimP && predEmpateP && p.pron_clasif_id && p.real_clasif_id &&
                 parseInt(p.pron_clasif_id)===parseInt(p.real_clasif_id) ? 1 : 0;
             %>
             <div class="d-inline-flex align-items-center gap-1">
