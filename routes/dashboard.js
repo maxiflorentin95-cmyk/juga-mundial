@@ -4,7 +4,7 @@ const { requireLogin } = require('../middleware/auth');
 
 router.get('/', requireLogin, async (req, res) => {
   try {
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     const userFresh = await prepare('SELECT * FROM usuarios WHERE id=$1').get(req.session.usuario.id);
     req.session.usuario.puntos_total = userFresh.puntos_total;
