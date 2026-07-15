@@ -4,7 +4,36 @@
   <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-left"></i> Volver
   </a>
-  <h2 class="fw-bold mb-0">Ranking General</h2>
+  <div>
+    <h2 class="fw-bold mb-0">Ranking
+      <% if (faseActiva !== 'todas') { %>
+        <span class="fs-5 fw-normal text-muted">—
+          <% const FASE_LABEL = { grupos:'Fase de Grupos', dieciseisavos:'16avos de Final', octavos:'Octavos de Final', cuartos:'Cuartos de Final', semifinal:'Semifinales', tercer_puesto:'Tercer Puesto', final:'Gran Final' }; %>
+          <%= FASE_LABEL[faseActiva] || faseActiva %>
+        </span>
+      <% } else { %>
+        <span class="fs-5 fw-normal text-muted">— General</span>
+      <% } %>
+    </h2>
+  </div>
+</div>
+
+<!-- Filtro por fase -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <% [
+    { key:'todas',         label:'Todas' },
+    { key:'grupos',        label:'Grupos' },
+    { key:'dieciseisavos', label:'16avos' },
+    { key:'octavos',       label:'Octavos' },
+    { key:'cuartos',       label:'Cuartos' },
+    { key:'semifinal',     label:'Semis' },
+    { key:'final',         label:'Final' },
+  ].forEach(f => { %>
+    <a href="/ranking?fase=<%= f.key %>"
+       class="btn btn-sm <%= faseActiva === f.key ? 'btn-dark' : 'btn-outline-secondary' %>">
+      <%= f.label %>
+    </a>
+  <% }) %>
 </div>
 
 <!-- AD SLOT desktop -->
@@ -72,7 +101,7 @@
             <th class="text-center" title="Diferencia (3 pts)">≈</th>
             <th class="text-center" title="Resultado (2 pts)">✓</th>
             <th class="text-center" title="Bonus clasificado eliminatoria">🏅</th>
-            <th class="text-center" title="Mejor racha histórica">⚡ Racha</th>
+            <% if (faseActiva === 'todas') { %><th class="text-center" title="Mejor racha histórica">⚡ Racha</th><% } %>
             <th class="text-center fw-bold">Pts</th>
           </tr>
         </thead>
@@ -112,12 +141,14 @@
                 <span class="badge bg-info text-dark">+<%= u.bonus_clasificado %></span>
               <% } else { %><span class="text-muted small">—</span><% } %>
             </td>
+            <% if (faseActiva === 'todas') { %>
             <td class="text-center">
               <% if (u.racha_max > 0) { %>
                 <span class="fw-bold" style="color:#6f42c1">⚡<%= u.racha_max %></span>
                 <% if (u.racha_actual > 0 && u.racha_actual === u.racha_max) { %><span class="badge ms-1" style="background:#6f42c1;font-size:.58rem">activa</span><% } %>
               <% } else { %><span class="text-muted">—</span><% } %>
             </td>
+            <% } %>
             <td class="text-center fw-bold fs-6 text-<%= i===0?'warning':i===1?'secondary':i===2?'danger':'dark' %>"><%= u.puntos_total %></td>
           </tr>
           <% }) %>
@@ -170,7 +201,7 @@
               <span class="badge bg-warning text-dark">🎯 <%= u.exactos %></span>
               <span class="badge bg-success">≈ <%= u.diferencia %></span>
               <span class="badge bg-primary">✓ <%= u.resultado %></span>
-              <% if (u.racha_max > 0) { %>
+              <% if (faseActiva === 'todas' && u.racha_max > 0) { %>
                 <span class="badge" style="background:#6f42c1">⚡<%= u.racha_max %><%= u.racha_actual===u.racha_max && u.racha_actual>0 ? ' 🔥' : '' %></span>
               <% } %>
               <% if (parseInt(u.bonus_clasificado) > 0) { %>

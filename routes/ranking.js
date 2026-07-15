@@ -5,6 +5,14 @@ const { requireLogin } = require('../middleware/auth');
 router.get('/', requireLogin, async (req, res) => {
   try {
     const uid = req.session.usuario.id;
+
+    const FASES_VALIDAS = ['todas', 'grupos', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
+    const faseActiva = FASES_VALIDAS.includes(req.query.fase) ? req.query.fase : 'todas';
+
+    const faseWhere = faseActiva === 'todas'   ? '' :
+                      faseActiva === 'grupos'  ? "AND p.fase = 'grupos'" :
+                                                 `AND p.fase = '${faseActiva}'`;
+
     const ranking = await prepare(`
       SELECT u.id, u.username,
         COALESCE(SUM(pr.puntos_obtenidos), 0) AS puntos_total,
@@ -23,6 +31,7 @@ router.get('/', requireLogin, async (req, res) => {
       FROM usuarios u
       LEFT JOIN pronosticos pr ON pr.usuario_id = u.id
       LEFT JOIN partidos p ON pr.partido_id = p.id
+      WHERE 1=1 ${faseWhere}
       GROUP BY u.id, u.username
       ORDER BY puntos_total DESC, exactos DESC, diferencia DESC
     `).all();
@@ -93,7 +102,7 @@ router.get('/', requireLogin, async (req, res) => {
     ranking.forEach(u => { u.especiales = especMap[u.id] || null; });
 
     const miPos = ranking.findIndex(u => u.id === uid) + 1;
-    res.render('ranking', { title: 'Ranking', ranking, miPos, uid });
+    res.render('ranking', { title: 'Ranking', ranking, miPos, uid, faseActiva });
   } catch (e) { console.error(e); res.status(500).send('Error'); }
 });
 
